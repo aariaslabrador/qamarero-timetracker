@@ -1,0 +1,17 @@
+{
+  "name": "qamarero-timetracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Panel web para dar de alta empleados y automatizar su fichaje de entrada/salida en pos.qamarero.com (Q-POS)",
+  "main": "src/server.js",
+  "scripts": {
+    "postinstall": "playwright install chromium",
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "playwright": "^1.47.0"
+  }
+}

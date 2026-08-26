@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Acceder — Qamarero Timetracker</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="wrap login-wrap">
+    <div class="panel">
+      <h2>Acceder al panel</h2>
+      <form id="login-form">
+        <div class="field">
+          <label for="user">Usuario</label>
+          <input type="text" id="user" autocomplete="username" required />
+        </div>
+        <div class="field">
+          <label for="pass">Contraseña</label>
+          <input type="password" id="pass" autocomplete="current-password" required />
+        </div>
+        <div class="error-text" id="error"></div>
+        <button class="primary" type="submit" style="width: 100%">Entrar</button>
+      </form>
+    </div>
+  </div>
+  <script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const user = document.getElementById('user').value;
+      const pass = document.getElementById('pass').value;
+      const errorEl = document.getElementById('error');
+      errorEl.textContent = '';
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user, pass }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          errorEl.textContent = data.error || 'No se pudo iniciar sesión';
+          return;
+        }
+        window.location.href = '/';
+      } catch {
+        errorEl.textContent = 'Error de red';
+      }
+    });
+  </script>
+</body>
+</html>

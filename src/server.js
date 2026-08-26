@@ -1,0 +1,129 @@
+require('dotenv').config();
+const path = require('path');
+const express = require('express');
+const session = require('express-session');
+const store = require('./store');
+const { runFichar } = require('./runner');
+const { checkCredentials, requireAuth } = require('./auth');
+const scheduler = require('./scheduler');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(express.json());
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'change-me',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 12 * 60 * 60 * 1000 },
+  })
+);
+
+// Login público, el resto del sitio (estáticos + API) queda protegido.
+app.post('/api/login', (req, res) => {
+  const { user, pass } = req.body || {};
+  if (checkCredentials(user, pass)) {
+    req.session.authenticated = true;
+    return res.json({ ok: true });
+  }
+  return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
+});
+
+app.post('/api/logout', (req, res) => {
+  req.session.destroy(() => res.json({ ok: true }));
+});
+
+app.use((req, res, next) => {
+  if (req.path === '/login.html' || req.path === '/api/login') return next();
+  return requireAuth(req, res, next);
+});
+
+app.use(express.static(path.join(__dirname, '..', 'public')));
+
+const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
+function validateEmployeePayload(body) {
+  const errors = [];
+  if (!body.name || !String(body.name).trim()) errors.push('El nombre es obligatorio');
+  if (!/^\d{4}$/.test(String(body.pin || ''))) errors.push('El PIN debe tener 4 dígitos');
+  const days = Array.isArray(body.days) ? body.days.filter((d) => DAY_KEYS.includes(d)) : [];
+  if (!/^\d{2}:\d{2}$/.test(body.start || '')) errors.push('Hora de inicio inválida');
+  if (!/^\d{2}:\d{2}$/.test(body.end || '')) errors.push('Hora de cierre inválida');
+  return { errors, days };
+}
+
+app.get('/api/employees', (req, res) => {
+  res.json(store.listEmployees());
+});
+
+app.post('/api/employees', (req, res) => {
+  const { errors, days } = validateEmployeePayload(req.body);
+  if (errors.length) return res.status(400).json({ error: errors.join(', ') });
+
+  const employee = store.createEmployee({
+    name: String(req.body.name).trim(),
+    pin: String(req.body.pin),
+    active: req.body.active !== false,
+    days,
+    start: req.body.start,
+    end: req.body.end,
+  });
+  res.status(201).json(employee);
+});
+
+app.put('/api/employees/:id', (req, res) => {
+  const existing = store.getEmployee(req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Empleado no encontrado' });
+
+  const { errors, days } = validateEmployeePayload(req.body);
+  if (errors.length) return res.status(400).json({ error: errors.join(', ') });
+
+  const updated = store.updateEmployee(req.params.id, {
+    name: String(req.body.name).trim(),
+    pin: String(req.body.pin),
+    active: req.body.active !== false,
+    days,
+    start: req.body.start,
+    end: req.body.end,
+  });
+  res.json(updated);
+});
+
+app.delete('/api/employees/:id', (req, res) => {
+  const ok = store.deleteEmployee(req.params.id);
+  if (!ok) return res.status(404).json({ error: 'Empleado no encontrado' });
+  res.json({ ok: true });
+});
+
+// Disparo manual desde la web, útil para probar sin esperar a la hora programada.
+app.post('/api/employees/:id/fichar', async (req, res) => {
+  const employee = store.getEmployee(req.params.id);
+  if (!employee) return res.status(404).json({ error: 'Empleado no encontrado' });
+
+  const action = req.body && req.body.action;
+  if (!['entrada', 'salida'].includes(action)) {
+    return res.status(400).json({ error: "action debe ser 'entrada' o 'salida'" });
+  }
+
+  const result = await runFichar({ employee, action });
+  if (!result.ok) return res.status(500).json(result);
+  res.json(result);
+});
+
+app.get('/api/logs', (req, res) => {
+  res.json(store.listLogs());
+});
+
+app.get('/api/settings', (req, res) => {
+  res.json(store.getSettings());
+});
+
+app.put('/api/settings', (req, res) => {
+  res.json(store.updateSettings({ timezone: req.body.timezone }));
+});
+
+app.listen(PORT, () => {
+  console.log(`Qamarero Timetracker escuchando en http://localhost:${PORT}`);
+  scheduler.start();
+});

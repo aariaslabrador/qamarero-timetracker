@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Qamarero Timetracker</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <h1>Qamarero Timetracker</h1>
+      <div>
+        <button class="ghost" id="logout-btn">Cerrar sesión</button>
+      </div>
+    </header>
+
+    <div class="panel">
+      <h2>Empleados</h2>
+      <div style="margin-bottom: 12px">
+        <button class="primary" id="add-employee-btn">+ Añadir empleado</button>
+      </div>
+      <table id="employees-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Días</th>
+            <th>Horario</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="employees-body"></tbody>
+      </table>
+      <div class="empty hidden" id="employees-empty">Todavía no has añadido ningún empleado.</div>
+    </div>
+
+    <div class="panel">
+      <h2>Historial de fichajes</h2>
+      <table id="logs-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Empleado</th>
+            <th>Acción</th>
+            <th>Resultado</th>
+          </tr>
+        </thead>
+        <tbody id="logs-body"></tbody>
+      </table>
+      <div class="empty hidden" id="logs-empty">Todavía no hay fichajes registrados.</div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="employee-overlay">
+    <div class="modal">
+      <h2 id="modal-title">Añadir empleado</h2>
+      <form id="employee-form">
+        <input type="hidden" id="employee-id" />
+        <div class="field">
+          <label for="employee-name">Nombre (tal cual aparece en Q-POS)</label>
+          <input type="text" id="employee-name" required />
+        </div>
+        <div class="field">
+          <label for="employee-pin">PIN del empleado (4 dígitos)</label>
+          <input type="text" id="employee-pin" inputmode="numeric" pattern="\d{4}" maxlength="4" required />
+        </div>
+        <div class="field">
+          <label>Días de trabajo</label>
+          <div class="day-picker" id="day-picker">
+            <label><input type="checkbox" value="mon" /> Lun</label>
+            <label><input type="checkbox" value="tue" /> Mar</label>
+            <label><input type="checkbox" value="wed" /> Mié</label>
+            <label><input type="checkbox" value="thu" /> Jue</label>
+            <label><input type="checkbox" value="fri" /> Vie</label>
+            <label><input type="checkbox" value="sat" /> Sáb</label>
+            <label><input type="checkbox" value="sun" /> Dom</label>
+          </div>
+        </div>
+        <div class="time-row">
+          <div class="field">
+            <label for="employee-start">Hora de entrada</label>
+            <input type="time" id="employee-start" required />
+          </div>
+          <div class="field">
+            <label for="employee-end">Hora de salida</label>
+            <input type="time" id="employee-end" required />
+          </div>
+        </div>
+        <div class="field">
+          <label><input type="checkbox" id="employee-active" checked /> Empleado activo (se le fichará automáticamente)</label>
+        </div>
+        <div class="error-text" id="employee-error"></div>
+        <div class="modal-actions">
+          <button type="button" class="ghost" id="cancel-employee-btn">Cancelar</button>
+          <button type="submit" class="primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
