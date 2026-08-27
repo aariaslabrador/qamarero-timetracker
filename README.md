@@ -67,8 +67,11 @@ npm start
 Abre `http://localhost:3000`, entra con `WEB_ADMIN_USER` / `WEB_ADMIN_PASS`
 y desde el panel:
 
-- **Añadir empleado**: nombre exactamente como aparece en Q-POS, su PIN de 4
-  dígitos, días de trabajo y hora de entrada/salida.
+- **Añadir empleado**: su nombre completo, el nombre **exacto** tal cual
+  aparece en su tarjeta dentro de Q-POS (p. ej. "Angel A.", con mayúsculas y
+  puntos incluidos — es lo que el script usa para encontrarlo sin
+  confundirlo con otro empleado), su PIN de 4 dígitos, días de trabajo y
+  hora de entrada/salida.
 - **Fichar entrada / Fichar salida**: dispara el fichaje al momento, útil
   para probar que todo funciona antes de dejarlo en automático.
 - **Historial de fichajes**: muestra cada intento (automático o manual), si

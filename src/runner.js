@@ -17,7 +17,13 @@ async function runFichar({ employee, action }) {
     browser = await chromium.launch({ headless });
     const page = await browser.newPage();
     await login(page, process.env.ACCESS_PHONE, process.env.ACCESS_PIN, restaurantName);
-    await fichar(page, { name: employee.name, pin: employee.pin, action, restaurantName });
+    await fichar(page, {
+      name: employee.name,
+      pin: employee.pin,
+      action,
+      restaurantName,
+      displayName: employee.displayName,
+    });
 
     store.addLog({
       employeeId: employee.id,

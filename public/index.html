@@ -57,8 +57,18 @@
       <form id="employee-form">
         <input type="hidden" id="employee-id" />
         <div class="field">
-          <label for="employee-name">Nombre (tal cual aparece en Q-POS)</label>
+          <label for="employee-name">Nombre completo del empleado</label>
           <input type="text" id="employee-name" required />
+        </div>
+        <div class="field">
+          <label for="employee-display-name">Nombre tal cual aparece en su tarjeta de Q-POS</label>
+          <input type="text" id="employee-display-name" placeholder="Ej: Angel A." required />
+          <div style="font-size: 12px; color: var(--muted); margin-top: 4px">
+            Es lo que se usa para buscarlo y fichar, así que tiene que
+            coincidir exactamente con el texto de su tarjeta en Q-POS
+            (incluidas mayúsculas y puntos). Evita confundir a dos empleados
+            con el mismo nombre de pila.
+          </div>
         </div>
         <div class="field">
           <label for="employee-pin">PIN del empleado (4 dígitos)</label>

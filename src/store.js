@@ -51,7 +51,15 @@ function getEmployee(id) {
   return load().employees.find((e) => e.id === id) || null;
 }
 
-function createEmployee({ name, pin, active = true, days = [], start = '09:00', end = '17:00' }) {
+function createEmployee({
+  name,
+  pin,
+  active = true,
+  days = [],
+  start = '09:00',
+  end = '17:00',
+  displayName = '',
+}) {
   const db = load();
   const employee = {
     id: crypto.randomUUID(),
@@ -61,6 +69,7 @@ function createEmployee({ name, pin, active = true, days = [], start = '09:00', 
     days,
     start,
     end,
+    displayName,
     createdAt: new Date().toISOString(),
   };
   db.employees.push(employee);

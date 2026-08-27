@@ -56,6 +56,9 @@ const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 function validateEmployeePayload(body) {
   const errors = [];
   if (!body.name || !String(body.name).trim()) errors.push('El nombre es obligatorio');
+  if (!body.displayName || !String(body.displayName).trim()) {
+    errors.push('El nombre tal cual aparece en Q-POS es obligatorio');
+  }
   if (!/^\d{4}$/.test(String(body.pin || ''))) errors.push('El PIN debe tener 4 dígitos');
   const days = Array.isArray(body.days) ? body.days.filter((d) => DAY_KEYS.includes(d)) : [];
   if (!/^\d{2}:\d{2}$/.test(body.start || '')) errors.push('Hora de inicio inválida');
@@ -78,6 +81,7 @@ app.post('/api/employees', (req, res) => {
     days,
     start: req.body.start,
     end: req.body.end,
+    displayName: String(req.body.displayName || '').trim(),
   });
   res.status(201).json(employee);
 });
@@ -96,6 +100,7 @@ app.put('/api/employees/:id', (req, res) => {
     days,
     start: req.body.start,
     end: req.body.end,
+    displayName: String(req.body.displayName || '').trim(),
   });
   res.json(updated);
 });

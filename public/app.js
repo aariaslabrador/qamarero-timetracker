@@ -38,7 +38,10 @@ function renderEmployees(employees) {
   for (const emp of employees) {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${escapeHtml(emp.name)}</td>
+      <td>
+        ${escapeHtml(emp.name)}
+        ${emp.displayName ? `<div style="font-size:12px;color:var(--muted)">Q-POS: ${escapeHtml(emp.displayName)}</div>` : ''}
+      </td>
       <td><div class="days">${dayChips(emp.days || [])}</div></td>
       <td>${emp.start} – ${emp.end}</td>
       <td><span class="badge ${emp.active ? 'on' : 'off'}">${emp.active ? 'Activo' : 'Pausado'}</span></td>
@@ -97,6 +100,7 @@ function openModal(employee) {
   errorEl.textContent = '';
   document.getElementById('employee-id').value = employee ? employee.id : '';
   document.getElementById('employee-name').value = employee ? employee.name : '';
+  document.getElementById('employee-display-name').value = employee ? employee.displayName || '' : '';
   document.getElementById('employee-pin').value = employee ? employee.pin : '';
   document.getElementById('employee-start').value = employee ? employee.start : '09:00';
   document.getElementById('employee-end').value = employee ? employee.end : '17:00';
@@ -130,6 +134,7 @@ form.addEventListener('submit', async (e) => {
 
   const payload = {
     name: document.getElementById('employee-name').value.trim(),
+    displayName: document.getElementById('employee-display-name').value.trim(),
     pin: document.getElementById('employee-pin').value.trim(),
     start: document.getElementById('employee-start').value,
     end: document.getElementById('employee-end').value,

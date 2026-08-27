@@ -8,17 +8,21 @@ async function openPersonal(page, restaurantName) {
   await page.getByPlaceholder('Buscar personal').waitFor({ timeout: 15000 });
 }
 
-async function selectEmployee(page, name) {
+// El buscador de Q-POS compara contra el nombre abreviado que se muestra en
+// la tarjeta (p. ej. "Angel A." aunque el nombre completo guardado sea
+// "Angel Arias"), así que buscar con el nombre completo no encuentra nada.
+// `displayName` es el texto exacto de esa tarjeta (obligatorio al crear el
+// empleado): se busca y se hace clic con coincidencia exacta sobre él, así
+// nunca hay confusión aunque dos empleados compartan nombre de pila.
+async function selectEmployee(page, { name, displayName }) {
   const search = page.getByPlaceholder('Buscar personal');
   await search.waitFor();
 
-  // El buscador de Q-POS compara contra el nombre abreviado que se muestra
-  // en la tarjeta (p. ej. "Angel A." aunque el nombre completo guardado sea
-  // "Angel Arias"), así que buscar con el nombre completo no encuentra
-  // nada. Se busca y se hace clic solo por el nombre de pila.
-  const firstName = name.trim().split(/\s+/)[0];
-  await search.fill(firstName);
-  await page.getByText(firstName, { exact: false }).first().click();
+  const term = (displayName && displayName.trim()) || name.trim().split(/\s+/)[0];
+  const exact = Boolean(displayName && displayName.trim());
+
+  await search.fill(term);
+  await page.getByText(term, { exact }).first().click();
 }
 
 async function waitForKeypad(page) {
@@ -27,9 +31,9 @@ async function waitForKeypad(page) {
 
 // Fichaje de un empleado. Asume que ya se ha hecho login() previamente.
 // action: 'entrada' | 'salida'
-async function fichar(page, { name, pin, action, restaurantName }) {
+async function fichar(page, { name, pin, action, restaurantName, displayName }) {
   await openPersonal(page, restaurantName);
-  await selectEmployee(page, name);
+  await selectEmployee(page, { name, displayName });
 
   if (action === 'entrada') {
     // Empleado "Fuera de turno": al pulsar su tarjeta aparece directamente
