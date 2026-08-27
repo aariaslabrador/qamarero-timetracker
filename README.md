@@ -11,8 +11,9 @@ navegador headless, entra en Q-POS y ficha por él.
 
 1. Con el teléfono y PIN de acceso general a Q-POS (`ACCESS_PHONE` /
    `ACCESS_PIN`), el script hace login en la app.
-2. Entra en la sección **Personal**, busca al empleado por su nombre y pulsa
-   su tarjeta.
+2. Pulsa el logo del local (arriba a la izquierda, identificado por
+   `RESTAURANT_NAME`) para entrar directamente en la pantalla de
+   **Personal**, busca al empleado por su nombre y pulsa su tarjeta.
 3. Si el empleado está "Fuera de turno", introduce su PIN de 4 dígitos para
    **fichar entrada**.
 4. Si está "En turno", pulsa **Fin de turno** y vuelve a introducir su PIN
@@ -40,6 +41,8 @@ Edita `.env`:
 
 - `ACCESS_PHONE` / `ACCESS_PIN`: el teléfono y PIN de acceso general a Q-POS
   (el login inicial de la app, **no** el PIN de cada empleado).
+- `RESTAURANT_NAME`: el nombre exacto de tu local tal cual aparece en el
+  logo de arriba a la izquierda en Q-POS (por ejemplo `Botavara`).
 - `WEB_ADMIN_USER` / `WEB_ADMIN_PASS`: usuario y contraseña para entrar a
   este panel (guarda los PINs de tus empleados, protégelo).
 - `SESSION_SECRET`: cualquier cadena larga y aleatoria.

@@ -1,7 +1,11 @@
 const { typeDigits } = require('./browser');
 
-async function openPersonal(page) {
-  await page.getByText('PERSONAL', { exact: true }).click();
+// El logo/avatar del local (arriba a la izquierda) es el acceso directo a
+// la pantalla de Personal desde cualquier pantalla en la que aterrice el
+// login (dashboard general o "Cuenta rápida").
+async function openPersonal(page, restaurantName) {
+  await page.getByRole('button', { name: restaurantName }).click();
+  await page.getByPlaceholder('Buscar personal').waitFor({ timeout: 15000 });
 }
 
 async function selectEmployee(page, name) {
@@ -17,8 +21,8 @@ async function waitForKeypad(page) {
 
 // Fichaje de un empleado. Asume que ya se ha hecho login() previamente.
 // action: 'entrada' | 'salida'
-async function fichar(page, { name, pin, action }) {
-  await openPersonal(page);
+async function fichar(page, { name, pin, action, restaurantName }) {
+  await openPersonal(page, restaurantName);
   await selectEmployee(page, name);
 
   if (action === 'entrada') {

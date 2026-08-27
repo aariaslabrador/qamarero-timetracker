@@ -17,7 +17,7 @@ async function typeDigits(page, value) {
   }
 }
 
-async function login(page, phone, pin) {
+async function login(page, phone, pin, restaurantName) {
   await page.goto(BASE_URL);
 
   await page.getByText('Introduce tu teléfono').waitFor();
@@ -27,8 +27,11 @@ async function login(page, phone, pin) {
   await page.getByText('Introduce el PIN').waitFor();
   await typeDigits(page, pin);
 
-  // El dashboard general muestra la tarjeta "CUENTAS" al terminar el login.
-  await page.getByText('CUENTAS', { exact: true }).first().waitFor({ timeout: 15000 });
+  // Tras el login la app puede aterrizar en distintas pantallas (el
+  // dashboard general o directamente en "Cuenta rápida"), pero el logo del
+  // local arriba a la izquierda está siempre presente: es la señal fiable
+  // de que el login terminó bien.
+  await page.getByRole('button', { name: restaurantName }).waitFor({ timeout: 15000 });
 }
 
 module.exports = { BASE_URL, clickDigit, typeDigits, login };
