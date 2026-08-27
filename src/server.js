@@ -10,6 +10,13 @@ const scheduler = require('./scheduler');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Detrás de un proxy inverso (nginx) que termina el HTTPS, hay que decirle
+// a Express que confíe en la cabecera X-Forwarded-Proto para que sepa que
+// la conexión real es segura; si no, la cookie de sesión "secure" nunca se
+// enviaría y el login se rompería en producción.
+const TRUST_PROXY = process.env.TRUST_PROXY === 'true';
+if (TRUST_PROXY) app.set('trust proxy', 1);
+
 // El servidor debe seguir vivo aunque un fichaje falle de forma inesperada
 // (p. ej. Chromium no instalado, timeout de red): si no, deja de fichar a
 // todo el mundo hasta que alguien lo reinicie a mano.
@@ -26,7 +33,8 @@ app.use(
     secret: process.env.SESSION_SECRET || 'change-me',
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 12 * 60 * 60 * 1000 },
+    proxy: TRUST_PROXY,
+    cookie: { maxAge: 12 * 60 * 60 * 1000, secure: TRUST_PROXY },
   })
 );
 

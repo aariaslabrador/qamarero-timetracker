@@ -147,6 +147,104 @@ proyecto (no se sube al repositorio) y que la primera vez conviene lanzar
 `npm start` a mano para comprobar que todo arranca bien antes de dejarlo
 en manos de pm2/systemd.
 
+## Publicar en un subdominio (VPS + nginx + HTTPS)
+
+Pasos para dejarlo accesible en `https://admin.botavaracordoba.es` (o el
+subdominio que uses) desde un VPS con nginx ya instalado.
+
+### 1. DNS
+
+En el panel de tu proveedor de dominio (Ginernet, o donde gestiones el DNS
+de `botavaracordoba.es`), añade un registro:
+
+```
+Tipo: A
+Nombre: admin
+Valor: <IP pública de tu VPS>
+TTL: por defecto
+```
+
+Comprueba que ha propagado antes de seguir:
+
+```bash
+dig +short admin.botavaracordoba.es
+```
+
+Debe devolver la IP de tu VPS (puede tardar de unos minutos a un par de
+horas).
+
+### 2. Clonar e instalar en el VPS
+
+```bash
+cd /var/www   # o la ruta que uses habitualmente
+git clone <url-de-este-repositorio> qamarero-timetracker
+cd qamarero-timetracker
+npm install
+npx playwright install-deps chromium   # instala las librerías de sistema que faltan
+cp .env.example .env
+nano .env
+```
+
+En `.env`, además de `ACCESS_PHONE`/`ACCESS_PIN`/`RESTAURANT_NAME` y las
+credenciales del panel:
+
+- `PORT=3000` (o el que prefieras; nginx apuntará a este puerto).
+- `TRUST_PROXY=true` — imprescindible en producción detrás de nginx con
+  HTTPS, si no el login no funcionará bien.
+
+Prueba que arranca antes de seguir: `npm start`, `Ctrl+C` para pararlo.
+
+### 3. Mantenerlo siempre encendido (systemd)
+
+Sigue la **Opción B** de la sección anterior con la ruta real del VPS
+(`/var/www/qamarero-timetracker` o la que hayas usado).
+
+### 4. nginx
+
+Hay una plantilla lista en `deploy/nginx-admin.botavaracordoba.es.conf`.
+
+```bash
+sudo cp deploy/nginx-admin.botavaracordoba.es.conf /etc/nginx/sites-available/admin.botavaracordoba.es
+sudo ln -s /etc/nginx/sites-available/admin.botavaracordoba.es /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+En este punto, `http://admin.botavaracordoba.es` ya debería mostrar el
+login (sin HTTPS todavía).
+
+Si usas `ufw` u otro firewall, el puerto `3000` (o el que hayas puesto en
+`PORT`) no necesita estar abierto al exterior — nginx lo alcanza por
+`127.0.0.1`, solo hacen falta `80`/`443` abiertos hacia fuera.
+
+### 5. HTTPS con certbot
+
+```bash
+sudo apt install certbot python3-certbot-nginx   # si no lo tienes ya
+sudo certbot --nginx -d admin.botavaracordoba.es
+```
+
+Certbot reescribe automáticamente el archivo de nginx añadiendo el bloque
+`server { listen 443 ssl; ... }` y la redirección de HTTP a HTTPS, y deja
+programada la renovación automática del certificado.
+
+Verifica que todo quedó bien:
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+curl -I https://admin.botavaracordoba.es
+```
+
+### 6. Verificación final
+
+- Abre `https://admin.botavaracordoba.es`, deberías ver el login con
+  candado válido en el navegador.
+- Entra con `WEB_ADMIN_USER`/`WEB_ADMIN_PASS` y confirma que la sesión se
+  mantiene al navegar (si no, revisa que `TRUST_PROXY=true` esté puesto y
+  reinicia el servicio: `sudo systemctl restart qamarero-timetracker`).
+- Prueba un "Fichar entrada" manual para confirmar que el VPS también
+  tiene salida a internet hacia `pos.qamarero.com`.
+
 ## Datos y seguridad
 
 - Los empleados, sus PINs y el historial de fichajes se guardan en
