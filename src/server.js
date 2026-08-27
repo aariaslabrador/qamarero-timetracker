@@ -10,6 +10,16 @@ const scheduler = require('./scheduler');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// El servidor debe seguir vivo aunque un fichaje falle de forma inesperada
+// (p. ej. Chromium no instalado, timeout de red): si no, deja de fichar a
+// todo el mundo hasta que alguien lo reinicie a mano.
+process.on('unhandledRejection', (err) => {
+  console.error('[unhandledRejection]', err);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err);
+});
+
 app.use(express.json());
 app.use(
   session({
@@ -106,9 +116,14 @@ app.post('/api/employees/:id/fichar', async (req, res) => {
     return res.status(400).json({ error: "action debe ser 'entrada' o 'salida'" });
   }
 
-  const result = await runFichar({ employee, action });
-  if (!result.ok) return res.status(500).json(result);
-  res.json(result);
+  try {
+    const result = await runFichar({ employee, action });
+    if (!result.ok) return res.status(500).json(result);
+    res.json(result);
+  } catch (err) {
+    console.error('[fichar] Error inesperado:', err);
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
 app.get('/api/logs', (req, res) => {
