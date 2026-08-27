@@ -158,12 +158,30 @@ th { color: var(--muted); font-weight: 600; }
 }
 .field input[type="text"],
 .field input[type="password"],
-.field input[type="time"] {
+.field input[type="time"],
+.field input[type="date"],
+.field input[type="number"] {
   width: 100%;
   padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
   font-size: 14px;
+}
+
+.vacation-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+.vacation-item button {
+  padding: 2px 8px;
+  font-size: 12px;
 }
 
 .day-picker {

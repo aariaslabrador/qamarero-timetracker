@@ -31,6 +31,16 @@ function dayChips(days) {
   }).join('');
 }
 
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function isOnVacationToday(emp) {
+  const today = todayStr();
+  return (emp.vacations || []).some((v) => today >= v.from && today <= v.to);
+}
+
 function renderEmployees(employees) {
   employeesBody.innerHTML = '';
   employeesEmpty.classList.toggle('hidden', employees.length > 0);
@@ -44,7 +54,10 @@ function renderEmployees(employees) {
       </td>
       <td><div class="days">${dayChips(emp.days || [])}</div></td>
       <td>${emp.start} – ${emp.end}</td>
-      <td><span class="badge ${emp.active ? 'on' : 'off'}">${emp.active ? 'Activo' : 'Pausado'}</span></td>
+      <td>
+        <span class="badge ${emp.active ? 'on' : 'off'}">${emp.active ? 'Activo' : 'Pausado'}</span>
+        ${isOnVacationToday(emp) ? '<div style="margin-top:4px"><span class="badge off">De vacaciones</span></div>' : ''}
+      </td>
       <td>
         <div class="row-actions">
           <button class="ghost" data-action="ficharentrada" data-id="${emp.id}">Fichar entrada</button>
@@ -95,6 +108,26 @@ async function loadLogs() {
   renderLogs(logs);
 }
 
+let currentVacations = [];
+
+function renderVacationList() {
+  const container = document.getElementById('vacation-list');
+  if (!currentVacations.length) {
+    container.innerHTML = '';
+    return;
+  }
+  container.innerHTML = currentVacations
+    .map(
+      (v, i) => `
+        <div class="vacation-item">
+          <span>${v.from} → ${v.to}</span>
+          <button type="button" class="ghost" data-remove-vacation="${i}">Quitar</button>
+        </div>
+      `
+    )
+    .join('');
+}
+
 function openModal(employee) {
   form.reset();
   errorEl.textContent = '';
@@ -104,6 +137,7 @@ function openModal(employee) {
   document.getElementById('employee-pin').value = employee ? employee.pin : '';
   document.getElementById('employee-start').value = employee ? employee.start : '09:00';
   document.getElementById('employee-end').value = employee ? employee.end : '17:00';
+  document.getElementById('employee-jitter').value = employee ? (employee.jitterMinutes ?? 5) : 5;
   document.getElementById('employee-active').checked = employee ? employee.active : true;
 
   const days = employee ? employee.days || [] : [];
@@ -111,9 +145,37 @@ function openModal(employee) {
     cb.checked = days.includes(cb.value);
   });
 
+  currentVacations = employee ? [...(employee.vacations || [])] : [];
+  renderVacationList();
+
   modalTitle.textContent = employee ? 'Editar empleado' : 'Añadir empleado';
   overlay.classList.remove('hidden');
 }
+
+document.getElementById('add-vacation-btn').addEventListener('click', () => {
+  const from = document.getElementById('vacation-from').value;
+  const to = document.getElementById('vacation-to').value;
+  if (!from || !to) {
+    errorEl.textContent = 'Indica fecha de inicio y fin para añadir un rango de vacaciones';
+    return;
+  }
+  if (from > to) {
+    errorEl.textContent = 'La fecha de inicio no puede ser posterior a la de fin';
+    return;
+  }
+  errorEl.textContent = '';
+  currentVacations.push({ from, to });
+  renderVacationList();
+  document.getElementById('vacation-from').value = '';
+  document.getElementById('vacation-to').value = '';
+});
+
+document.getElementById('vacation-list').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-remove-vacation]');
+  if (!btn) return;
+  currentVacations.splice(Number(btn.dataset.removeVacation), 1);
+  renderVacationList();
+});
 
 function closeModal() {
   overlay.classList.add('hidden');
@@ -138,8 +200,10 @@ form.addEventListener('submit', async (e) => {
     pin: document.getElementById('employee-pin').value.trim(),
     start: document.getElementById('employee-start').value,
     end: document.getElementById('employee-end').value,
+    jitterMinutes: Number(document.getElementById('employee-jitter').value) || 0,
     active: document.getElementById('employee-active').checked,
     days,
+    vacations: currentVacations,
   };
 
   try {

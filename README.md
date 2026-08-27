@@ -72,6 +72,14 @@ y desde el panel:
   puntos incluidos — es lo que el script usa para encontrarlo sin
   confundirlo con otro empleado), su PIN de 4 dígitos, días de trabajo y
   hora de entrada/salida.
+- **Variación aleatoria (minutos)**: cada día ficha unos minutos antes o
+  después de la hora programada (hasta el máximo que indiques, tope 15
+  minutos), para que no fiche a la hora exacta todos los días. La hora real
+  de ese día se calcula una sola vez y se mantiene fija el resto del día
+  (como una persona real, no salta de un minuto a otro en cada fichaje).
+- **Vacaciones / días libres**: añade uno o varios rangos de fechas por
+  empleado; el planificador no ficha nada esos días aunque coincidan con un
+  día de trabajo configurado.
 - **Fichar entrada / Fichar salida**: dispara el fichaje al momento, útil
   para probar que todo funciona antes de dejarlo en automático.
 - **Historial de fichajes**: muestra cada intento (automático o manual), si
@@ -81,7 +89,13 @@ y desde el panel:
 
 Mientras el proceso `npm start` esté corriendo, el planificador interno
 dispara automáticamente la entrada y la salida de cada empleado activo a
-las horas configuradas, cada día que le corresponda.
+las horas configuradas (con su variación aleatoria aplicada), cada día que
+le corresponda y que no esté de vacaciones.
+
+> La variación aleatoria está pensada para automatizar el fichaje de
+> jornadas que **realmente** se cumplen tal cual —no para simular presencia
+> que no es real—: el registro horario debe reflejar la hora real de
+> entrada y salida de cada empleado.
 
 ## Mantener el panel siempre activo
 

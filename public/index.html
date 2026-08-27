@@ -97,6 +97,33 @@
           </div>
         </div>
         <div class="field">
+          <label for="employee-jitter">Variación aleatoria (minutos)</label>
+          <input type="number" id="employee-jitter" min="0" max="15" step="1" value="5" />
+          <div style="font-size: 12px; color: var(--muted); margin-top: 4px">
+            Cada día ficha entre unos minutos antes y después de la hora
+            programada (hasta este máximo), como al fichar a mano.
+          </div>
+        </div>
+        <div class="field">
+          <label>Vacaciones / días libres</label>
+          <div id="vacation-list"></div>
+          <div class="time-row" style="align-items: flex-end">
+            <div class="field">
+              <label for="vacation-from">Desde</label>
+              <input type="date" id="vacation-from" />
+            </div>
+            <div class="field">
+              <label for="vacation-to">Hasta</label>
+              <input type="date" id="vacation-to" />
+            </div>
+            <button type="button" class="ghost" id="add-vacation-btn">+ Añadir</button>
+          </div>
+          <div style="font-size: 12px; color: var(--muted); margin-top: 4px">
+            Los días dentro de estos rangos no se fichará nada aunque
+            coincidan con un día de trabajo.
+          </div>
+        </div>
+        <div class="field">
           <label><input type="checkbox" id="employee-active" checked /> Empleado activo (se le fichará automáticamente)</label>
         </div>
         <div class="error-text" id="employee-error"></div>

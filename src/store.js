@@ -59,6 +59,8 @@ function createEmployee({
   start = '09:00',
   end = '17:00',
   displayName = '',
+  jitterMinutes = 5,
+  vacations = [],
 }) {
   const db = load();
   const employee = {
@@ -70,6 +72,8 @@ function createEmployee({
     start,
     end,
     displayName,
+    jitterMinutes,
+    vacations,
     createdAt: new Date().toISOString(),
   };
   db.employees.push(employee);

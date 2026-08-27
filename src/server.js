@@ -53,6 +53,8 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 function validateEmployeePayload(body) {
   const errors = [];
   if (!body.name || !String(body.name).trim()) errors.push('El nombre es obligatorio');
@@ -63,7 +65,26 @@ function validateEmployeePayload(body) {
   const days = Array.isArray(body.days) ? body.days.filter((d) => DAY_KEYS.includes(d)) : [];
   if (!/^\d{2}:\d{2}$/.test(body.start || '')) errors.push('Hora de inicio inválida');
   if (!/^\d{2}:\d{2}$/.test(body.end || '')) errors.push('Hora de cierre inválida');
-  return { errors, days };
+
+  let jitterMinutes = Number(body.jitterMinutes);
+  if (Number.isNaN(jitterMinutes)) jitterMinutes = 0;
+  jitterMinutes = Math.max(0, Math.min(scheduler.MAX_JITTER_MINUTES, Math.round(jitterMinutes)));
+
+  const rawVacations = Array.isArray(body.vacations) ? body.vacations : [];
+  const vacations = [];
+  for (const v of rawVacations) {
+    if (!v || !DATE_RE.test(v.from) || !DATE_RE.test(v.to)) {
+      errors.push('Rango de vacaciones inválido');
+      continue;
+    }
+    if (v.from > v.to) {
+      errors.push('En cada rango de vacaciones la fecha de inicio no puede ser posterior a la de fin');
+      continue;
+    }
+    vacations.push({ from: v.from, to: v.to });
+  }
+
+  return { errors, days, jitterMinutes, vacations };
 }
 
 app.get('/api/employees', (req, res) => {
@@ -71,7 +92,7 @@ app.get('/api/employees', (req, res) => {
 });
 
 app.post('/api/employees', (req, res) => {
-  const { errors, days } = validateEmployeePayload(req.body);
+  const { errors, days, jitterMinutes, vacations } = validateEmployeePayload(req.body);
   if (errors.length) return res.status(400).json({ error: errors.join(', ') });
 
   const employee = store.createEmployee({
@@ -82,6 +103,8 @@ app.post('/api/employees', (req, res) => {
     start: req.body.start,
     end: req.body.end,
     displayName: String(req.body.displayName || '').trim(),
+    jitterMinutes,
+    vacations,
   });
   res.status(201).json(employee);
 });
@@ -90,7 +113,7 @@ app.put('/api/employees/:id', (req, res) => {
   const existing = store.getEmployee(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Empleado no encontrado' });
 
-  const { errors, days } = validateEmployeePayload(req.body);
+  const { errors, days, jitterMinutes, vacations } = validateEmployeePayload(req.body);
   if (errors.length) return res.status(400).json({ error: errors.join(', ') });
 
   const updated = store.updateEmployee(req.params.id, {
@@ -101,6 +124,8 @@ app.put('/api/employees/:id', (req, res) => {
     start: req.body.start,
     end: req.body.end,
     displayName: String(req.body.displayName || '').trim(),
+    jitterMinutes,
+    vacations,
   });
   res.json(updated);
 });
