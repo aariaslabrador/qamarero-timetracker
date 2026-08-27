@@ -79,19 +79,53 @@ las horas configuradas, cada día que le corresponda.
 
 ## Mantener el panel siempre activo
 
-El fichaje automático solo funciona mientras el proceso Node esté vivo.
-Para producción, usa un gestor de procesos, por ejemplo con
-[pm2](https://pm2.keymetrics.io/):
+El fichaje automático solo funciona mientras el proceso Node esté vivo, así
+que en producción necesitas algo que lo mantenga arrancado y lo reinicie
+si se cae. Elige una de las dos opciones:
+
+### Opción A: pm2
+
+Ya incluye `ecosystem.config.js` en la raíz del proyecto.
 
 ```bash
 npm install -g pm2
-pm2 start src/server.js --name qamarero-timetracker
-pm2 save
-pm2 startup
+cd /ruta/a/qamarero-timetracker
+pm2 start ecosystem.config.js
+pm2 save        # guarda la lista de procesos
+pm2 startup     # te da el comando para que pm2 arranque solo al reiniciar el servidor
 ```
 
-O un servicio `systemd` que ejecute `npm start` en este directorio y se
-reinicie solo si el proceso cae.
+Comandos útiles: `pm2 logs qamarero-timetracker`, `pm2 restart
+qamarero-timetracker`, `pm2 stop qamarero-timetracker`.
+
+### Opción B: systemd
+
+Hay una plantilla en `deploy/qamarero-timetracker.service`.
+
+```bash
+# 1. Copia la plantilla y edítala: pon el usuario del sistema y la ruta real
+sudo cp deploy/qamarero-timetracker.service /etc/systemd/system/
+sudo nano /etc/systemd/system/qamarero-timetracker.service
+#   User=tu_usuario
+#   WorkingDirectory=/ruta/real/a/qamarero-timetracker
+
+# 2. Activa y arranca el servicio
+sudo systemctl daemon-reload
+sudo systemctl enable --now qamarero-timetracker
+
+# 3. Comprobar que corre y ver logs
+sudo systemctl status qamarero-timetracker
+sudo journalctl -u qamarero-timetracker -f
+```
+
+Con `enable` el servicio arrancará solo cada vez que se reinicie el
+servidor, y `Restart=on-failure` hace que se reinicie solo si el proceso
+se cae.
+
+En ambos casos, recuerda que `.env` debe existir en la carpeta del
+proyecto (no se sube al repositorio) y que la primera vez conviene lanzar
+`npm start` a mano para comprobar que todo arranca bien antes de dejarlo
+en manos de pm2/systemd.
 
 ## Datos y seguridad
 
