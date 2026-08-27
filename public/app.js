@@ -253,6 +253,12 @@ employeesBody.addEventListener('click', async (e) => {
   }
 });
 
+document.getElementById('clear-logs-btn').addEventListener('click', async () => {
+  if (!confirm('¿Vaciar todo el historial de fichajes? Esta acción no se puede deshacer.')) return;
+  await api('/api/logs', { method: 'DELETE' });
+  await loadLogs();
+});
+
 document.getElementById('logout-btn').addEventListener('click', async () => {
   await api('/api/logout', { method: 'POST' });
   window.location.href = '/login.html';

@@ -109,6 +109,12 @@ function listLogs(limit = 100) {
   return load().logs.slice(0, limit);
 }
 
+function clearLogs() {
+  const db = load();
+  db.logs = [];
+  save(db);
+}
+
 module.exports = {
   getSettings,
   updateSettings,
@@ -119,4 +125,5 @@ module.exports = {
   deleteEmployee,
   addLog,
   listLogs,
+  clearLogs,
 };

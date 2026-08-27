@@ -172,6 +172,11 @@ app.get('/api/logs', (req, res) => {
   res.json(store.listLogs());
 });
 
+app.delete('/api/logs', (req, res) => {
+  store.clearLogs();
+  res.json({ ok: true });
+});
+
 app.get('/api/settings', (req, res) => {
   res.json(store.getSettings());
 });
