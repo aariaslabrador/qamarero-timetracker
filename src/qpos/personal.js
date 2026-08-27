@@ -8,25 +8,44 @@ async function openPersonal(page, restaurantName) {
   await page.getByPlaceholder('Buscar personal').waitFor({ timeout: 15000 });
 }
 
-// El buscador de Q-POS compara contra el nombre abreviado que se muestra en
-// la tarjeta (p. ej. "Angel A." aunque el nombre completo guardado sea
-// "Angel Arias"), así que buscar con el nombre completo no encuentra nada.
-// `displayName` es el texto exacto de esa tarjeta (obligatorio al crear el
-// empleado): se busca y se hace clic con coincidencia exacta sobre él, así
-// nunca hay confusión aunque dos empleados compartan nombre de pila.
+// El buscador de Q-POS solo encuentra resultados con el nombre de pila
+// suelto (ni el nombre completo "Angel Arias" ni el texto exacto de la
+// tarjeta "Angel A." devuelven nada), así que se busca siempre así. Para
+// el clic, en cambio, se usa `displayName` (el texto exacto de la tarjeta,
+// obligatorio al crear el empleado) con coincidencia exacta, para no
+// confundir a dos empleados que compartan nombre de pila.
 async function selectEmployee(page, { name, displayName }) {
   const search = page.getByPlaceholder('Buscar personal');
   await search.waitFor();
 
-  const term = (displayName && displayName.trim()) || name.trim().split(/\s+/)[0];
-  const exact = Boolean(displayName && displayName.trim());
+  const firstName = name.trim().split(/\s+/)[0];
+  await search.fill(firstName);
 
-  await search.fill(term);
-  await page.getByText(term, { exact }).first().click();
+  if (displayName && displayName.trim()) {
+    await page.getByText(displayName.trim(), { exact: true }).first().click();
+  } else {
+    await page.getByText(firstName, { exact: false }).first().click();
+  }
 }
 
 async function waitForKeypad(page) {
   await page.getByRole('button', { name: '7', exact: true }).waitFor();
+}
+
+// Tras pulsar la tarjeta del empleado, la pantalla que aparece depende de
+// si ya está en turno o no: "Fichar entrada" (con teclado) si está "Fuera
+// de turno", o su ficha de detalle con "Fin de turno" si está "En turno".
+// Se detecta cuál de las dos apareció en vez de asumirlo, para poder avisar
+// con un mensaje claro si no cuadra con la acción pedida (p. ej. querer
+// fichar salida de alguien que nunca fichó entrada).
+async function detectShiftState(page, timeout = 20000) {
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline) {
+    if (await page.getByText('Fichar entrada').isVisible().catch(() => false)) return 'off';
+    if (await page.getByText('Fin de turno').isVisible().catch(() => false)) return 'on';
+    await page.waitForTimeout(300);
+  }
+  return null;
 }
 
 // Fichaje de un empleado. Asume que ya se ha hecho login() previamente.
@@ -35,19 +54,29 @@ async function fichar(page, { name, pin, action, restaurantName, displayName }) 
   await openPersonal(page, restaurantName);
   await selectEmployee(page, { name, displayName });
 
+  const state = await detectShiftState(page);
+  if (!state) {
+    throw new Error(
+      `No se pudo comprobar si ${name} está en turno (no apareció ni "Fichar entrada" ni "Fin de turno").`
+    );
+  }
+
   if (action === 'entrada') {
-    // Empleado "Fuera de turno": al pulsar su tarjeta aparece directamente
-    // el teclado "Fichar entrada" pidiendo su PIN (se envía solo al 4º dígito).
-    await page.getByText('Fichar entrada').waitFor();
+    if (state === 'on') {
+      throw new Error(`${name} ya está en turno; no hace falta fichar entrada de nuevo.`);
+    }
+    // Empleado "Fuera de turno": aparece el teclado "Fichar entrada" pidiendo
+    // su PIN (se envía solo al 4º dígito).
     await waitForKeypad(page);
     await typeDigits(page, pin);
     // Confirmación: pantalla de detalle del empleado con el botón "Fin de turno".
     await page.getByText('Fin de turno').waitFor({ timeout: 15000 });
   } else if (action === 'salida') {
-    // Empleado "En turno": al pulsar su tarjeta se abre su pantalla de detalle
-    // directamente (sin PIN). Hay que pulsar "Fin de turno", que vuelve a
-    // pedir el PIN del empleado para confirmar la salida.
-    await page.getByText('Fin de turno').waitFor();
+    if (state === 'off') {
+      throw new Error(`${name} no está en turno; no se puede fichar salida hasta que fiche entrada.`);
+    }
+    // Empleado "En turno": pulsar "Fin de turno" vuelve a pedir su PIN para
+    // confirmar la salida.
     await page.getByText('Fin de turno').click();
     await waitForKeypad(page);
     await typeDigits(page, pin);
