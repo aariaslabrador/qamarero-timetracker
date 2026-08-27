@@ -11,13 +11,13 @@ async function openPersonal(page, restaurantName) {
 async function selectEmployee(page, name) {
   const search = page.getByPlaceholder('Buscar personal');
   await search.waitFor();
-  await search.fill(name);
 
-  // La tarjeta del empleado en el listado puede mostrar el nombre abreviado
-  // (p. ej. "Angel A." aunque su nombre completo sea "Angel Arias"), así
-  // que tras filtrar con el nombre completo el clic se hace solo por el
-  // nombre de pila, que sí coincide siempre con lo que muestra la tarjeta.
+  // El buscador de Q-POS compara contra el nombre abreviado que se muestra
+  // en la tarjeta (p. ej. "Angel A." aunque el nombre completo guardado sea
+  // "Angel Arias"), así que buscar con el nombre completo no encuentra
+  // nada. Se busca y se hace clic solo por el nombre de pila.
   const firstName = name.trim().split(/\s+/)[0];
+  await search.fill(firstName);
   await page.getByText(firstName, { exact: false }).first().click();
 }
 
