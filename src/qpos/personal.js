@@ -12,7 +12,13 @@ async function selectEmployee(page, name) {
   const search = page.getByPlaceholder('Buscar personal');
   await search.waitFor();
   await search.fill(name);
-  await page.getByText(name, { exact: false }).first().click();
+
+  // La tarjeta del empleado en el listado puede mostrar el nombre abreviado
+  // (p. ej. "Angel A." aunque su nombre completo sea "Angel Arias"), así
+  // que tras filtrar con el nombre completo el clic se hace solo por el
+  // nombre de pila, que sí coincide siempre con lo que muestra la tarjeta.
+  const firstName = name.trim().split(/\s+/)[0];
+  await page.getByText(firstName, { exact: false }).first().click();
 }
 
 async function waitForKeypad(page) {
