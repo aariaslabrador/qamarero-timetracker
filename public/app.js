@@ -253,6 +253,25 @@ employeesBody.addEventListener('click', async (e) => {
   }
 });
 
+document.getElementById('test-telegram-btn').addEventListener('click', async (e) => {
+  const btn = e.target;
+  const resultEl = document.getElementById('telegram-test-result');
+  btn.disabled = true;
+  btn.textContent = 'Enviando…';
+  resultEl.textContent = '';
+  try {
+    await api('/api/test-telegram', { method: 'POST' });
+    resultEl.style.color = 'var(--accent-dark)';
+    resultEl.textContent = 'Mensaje de prueba enviado, revisa Telegram.';
+  } catch (err) {
+    resultEl.style.color = 'var(--danger)';
+    resultEl.textContent = err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Enviar prueba';
+  }
+});
+
 document.getElementById('clear-logs-btn').addEventListener('click', async () => {
   if (!confirm('¿Vaciar todo el historial de fichajes? Esta acción no se puede deshacer.')) return;
   await api('/api/logs', { method: 'DELETE' });

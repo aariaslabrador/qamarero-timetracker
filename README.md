@@ -251,6 +251,35 @@ curl -I https://admin.botavaracordoba.es
 - Prueba un "Fichar entrada" manual para confirmar que el VPS también
   tiene salida a internet hacia `pos.qamarero.com`.
 
+## Notificaciones por Telegram (opcional)
+
+Si configuras `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` en el `.env`, la
+app te avisa por Telegram cuando:
+
+- Un fichaje automático no se ha podido hacer tras 20 minutos
+  reintentándolo (necesita que lo hagas a mano desde el panel).
+- El servidor tiene un error inesperado.
+
+### Crear el bot y conseguir el token
+
+1. En Telegram, habla con **@BotFather** → `/newbot` → sigue los pasos
+   (nombre y usuario del bot).
+2. Te da un token tipo `123456789:AAExxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`.
+   Ese es `TELEGRAM_BOT_TOKEN`.
+
+### Conseguir tu chat id
+
+1. Busca tu bot recién creado en Telegram y envíale cualquier mensaje
+   (por ejemplo "hola").
+2. Abre en el navegador (sustituyendo `<TOKEN>`):
+   `https://api.telegram.org/bot<TOKEN>/getUpdates`
+3. Busca `"chat":{"id":XXXXXXXXX` en la respuesta — ese número es tu
+   `TELEGRAM_CHAT_ID`.
+
+Pon ambos valores en `.env`, reinicia el servicio
+(`sudo systemctl restart qamarero-timetracker`) y usa el botón
+**"Enviar prueba"** del panel para confirmar que llega el mensaje.
+
 ## Datos y seguridad
 
 - Los empleados, sus PINs y el historial de fichajes se guardan en

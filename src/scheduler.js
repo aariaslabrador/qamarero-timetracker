@@ -1,5 +1,6 @@
 const store = require('./store');
 const { runFichar } = require('./runner');
+const { sendTelegramMessage } = require('./telegram');
 
 const WEEKDAY_TO_KEY = {
   Sun: 'sun',
@@ -138,9 +139,9 @@ async function tick() {
 
       if (now - state.dueSince > RETRY_WINDOW_MS) {
         state.status = 'gaveup';
-        console.error(
-          `[scheduler] ${action} de ${employee.name} lleva más de 20 min sin poder ficharse; revísalo a mano desde el panel.`
-        );
+        const msg = `⚠️ No se pudo fichar la ${action} de ${employee.name} tras 20 minutos reintentando. Hazlo a mano desde el panel.`;
+        console.error(`[scheduler] ${msg}`);
+        sendTelegramMessage(msg);
         continue;
       }
 

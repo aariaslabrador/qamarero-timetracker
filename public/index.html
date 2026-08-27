@@ -36,6 +36,20 @@
 
     <div class="panel">
       <div style="display: flex; align-items: center; justify-content: space-between">
+        <h2>Notificaciones por Telegram</h2>
+        <button class="ghost" id="test-telegram-btn">Enviar prueba</button>
+      </div>
+      <p style="font-size: 13px; color: var(--muted); margin: 0">
+        Avisa por Telegram si un fichaje automático no se puede hacer tras
+        varios reintentos, o si el servidor tiene un error inesperado.
+        Configúralo con <code>TELEGRAM_BOT_TOKEN</code> y
+        <code>TELEGRAM_CHAT_ID</code> en el <code>.env</code> (ver README).
+      </p>
+      <div class="error-text" id="telegram-test-result"></div>
+    </div>
+
+    <div class="panel">
+      <div style="display: flex; align-items: center; justify-content: space-between">
         <h2>Historial de fichajes</h2>
         <button class="ghost" id="clear-logs-btn">Vaciar historial</button>
       </div>

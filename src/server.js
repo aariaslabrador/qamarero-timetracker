@@ -6,6 +6,7 @@ const store = require('./store');
 const { runFichar } = require('./runner');
 const { checkCredentials, requireAuth } = require('./auth');
 const scheduler = require('./scheduler');
+const { sendTelegramMessage } = require('./telegram');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,9 +23,11 @@ if (TRUST_PROXY) app.set('trust proxy', 1);
 // todo el mundo hasta que alguien lo reinicie a mano.
 process.on('unhandledRejection', (err) => {
   console.error('[unhandledRejection]', err);
+  sendTelegramMessage(`⚠️ Error inesperado en Qamarero Timetracker: ${err && err.message ? err.message : err}`);
 });
 process.on('uncaughtException', (err) => {
   console.error('[uncaughtException]', err);
+  sendTelegramMessage(`⚠️ Error inesperado en Qamarero Timetracker: ${err && err.message ? err.message : err}`);
 });
 
 app.use(express.json());
@@ -183,6 +186,12 @@ app.get('/api/settings', (req, res) => {
 
 app.put('/api/settings', (req, res) => {
   res.json(store.updateSettings({ timezone: req.body.timezone }));
+});
+
+app.post('/api/test-telegram', async (req, res) => {
+  const result = await sendTelegramMessage('✅ Notificaciones de Qamarero Timetracker configuradas correctamente.');
+  if (!result.ok) return res.status(400).json(result);
+  res.json(result);
 });
 
 app.listen(PORT, () => {
