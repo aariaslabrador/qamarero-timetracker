@@ -123,17 +123,23 @@ qamarero-timetracker`, `pm2 stop qamarero-timetracker`.
 Hay una plantilla en `deploy/qamarero-timetracker.service`.
 
 ```bash
-# 1. Copia la plantilla y edítala: pon el usuario del sistema y la ruta real
+# 1. Si instalaste Node con nvm, averigua la ruta exacta de su binario
+#    (como el usuario que ejecutará el servicio):
+nvm use 20 && which node
+# → algo como /home/tu_usuario/.nvm/versions/node/v20.x.x/bin/node
+
+# 2. Copia la plantilla y edítala: usuario, ruta del proyecto y ruta de node
 sudo cp deploy/qamarero-timetracker.service /etc/systemd/system/
 sudo nano /etc/systemd/system/qamarero-timetracker.service
 #   User=tu_usuario
 #   WorkingDirectory=/ruta/real/a/qamarero-timetracker
+#   ExecStart=<ruta de "which node" de arriba> src/server.js
 
-# 2. Activa y arranca el servicio
+# 3. Activa y arranca el servicio
 sudo systemctl daemon-reload
 sudo systemctl enable --now qamarero-timetracker
 
-# 3. Comprobar que corre y ver logs
+# 4. Comprobar que corre y ver logs
 sudo systemctl status qamarero-timetracker
 sudo journalctl -u qamarero-timetracker -f
 ```

@@ -5,10 +5,18 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-# Cambia estas dos rutas y el usuario por los de tu servidor
+# Cambia estas rutas y el usuario por los de tu servidor.
 User=CAMBIA_TU_USUARIO
 WorkingDirectory=/ruta/a/qamarero-timetracker
-ExecStart=/usr/bin/npm start
+
+# Si Node se instaló con nvm (recomendado para no tocar el Node del
+# sistema), /usr/bin/npm NO es el que quieres: systemd no lee el PATH de
+# tu shell, así que hay que apuntar al binario exacto de nvm. Averígualo
+# con (como el usuario que va a ejecutar el servicio):
+#   nvm use 20 && which node
+# y sustituye la ruta de abajo por lo que devuelva (algo como
+# /home/tu_usuario/.nvm/versions/node/v20.x.x/bin/node).
+ExecStart=/ruta/a/.nvm/versions/node/vXX.X.X/bin/node src/server.js
 Restart=on-failure
 RestartSec=5
 Environment=NODE_ENV=production
