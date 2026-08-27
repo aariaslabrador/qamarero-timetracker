@@ -286,3 +286,9 @@ public/            Frontend (HTML/CSS/JS sin dependencias ni build)
 - El planificador vive en memoria: si el proceso se reinicia justo en el
   minuto exacto de un fichaje programado, existe una posibilidad remota de
   que se dispare dos veces.
+- Si un fichaje falla (p. ej. un timeout puntual), el planificador lo
+  reintenta automáticamente cada 2 minutos durante un margen de 20 minutos.
+  Si sigue sin poder ficharse pasado ese tiempo, queda registrado como
+  error en el Historial y hay que hacerlo a mano desde el botón "Fichar
+  entrada/salida" del panel — revisa el Historial de vez en cuando para
+  detectar estos casos.

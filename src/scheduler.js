@@ -16,12 +16,25 @@ const WEEKDAY_TO_KEY = {
 // panel/servidor).
 const MAX_JITTER_MINUTES = 15;
 
-// Últimos disparos hechos, para no repetir un fichaje si el tick cae
-// varias veces dentro del mismo minuto. Vive solo en memoria: si el
-// proceso se reinicia justo en el minuto exacto de un fichaje, podría
-// repetirse una vez; es un riesgo asumido a cambio de no depender de
-// una base de datos para esto.
-const lastFired = new Map();
+// Estado de cada fichaje (entrada/salida) del día para cada empleado. Vive
+// solo en memoria: si el proceso se reinicia, se pierde el progreso de
+// reintentos del día en curso; es un riesgo asumido a cambio de no
+// depender de una base de datos para esto.
+//
+// key = `${employeeId}:${action}:${dateStr}` -> {
+//   status: 'pending' | 'done' | 'gaveup',
+//   dueSince: primer instante (ms) en que se detectó que tocaba fichar,
+//   lastAttemptAt: último intento (ms),
+//   inFlight: hay un intento en curso ahora mismo,
+// }
+const attempts = new Map();
+
+// Si un fichaje falla (p. ej. un timeout puntual de Q-POS), se reintenta
+// cada RETRY_COOLDOWN_MS hasta RETRY_WINDOW_MS después de la hora que
+// tocaba. Esto evita que un fallo aislado en la entrada deje al empleado
+// "no encontrado en turno" cuando llegue la hora de la salida.
+const RETRY_COOLDOWN_MS = 2 * 60 * 1000;
+const RETRY_WINDOW_MS = 20 * 60 * 1000;
 
 // Hora "real" (con la variación aleatoria del día ya aplicada) de cada
 // entrada/salida. Se calcula una sola vez por empleado y por día, para que
@@ -83,10 +96,24 @@ function isOnVacation(employee, dateStr) {
   return (employee.vacations || []).some((v) => dateStr >= v.from && dateStr <= v.to);
 }
 
+function pruneAttempts(dateStr) {
+  for (const key of attempts.keys()) {
+    if (!key.endsWith(`:${dateStr}`)) attempts.delete(key);
+  }
+}
+
+function getAttemptState(key) {
+  if (!attempts.has(key)) {
+    attempts.set(key, { status: 'pending', dueSince: null, lastAttemptAt: 0, inFlight: false });
+  }
+  return attempts.get(key);
+}
+
 async function tick() {
   const { timezone } = store.getSettings();
   const { day, time, dateStr } = nowParts(timezone);
   pruneJitterCache(dateStr);
+  pruneAttempts(dateStr);
 
   const employees = store.listEmployees().filter((e) => e.active);
 
@@ -100,18 +127,36 @@ async function tick() {
       ['entrada', entrada],
       ['salida', salida],
     ]) {
-      if (target !== time) continue;
+      if (time < target) continue; // todavía no toca
 
-      const key = `${employee.id}:${action}:${dateStr}:${time}`;
-      if (lastFired.get(key)) continue;
-      lastFired.set(key, true);
+      const key = `${employee.id}:${action}:${dateStr}`;
+      const state = getAttemptState(key);
+      if (state.status !== 'pending' || state.inFlight) continue;
+
+      const now = Date.now();
+      if (!state.dueSince) state.dueSince = now;
+
+      if (now - state.dueSince > RETRY_WINDOW_MS) {
+        state.status = 'gaveup';
+        console.error(
+          `[scheduler] ${action} de ${employee.name} lleva más de 20 min sin poder ficharse; revísalo a mano desde el panel.`
+        );
+        continue;
+      }
+
+      if (now - state.lastAttemptAt < RETRY_COOLDOWN_MS) continue;
+
+      state.inFlight = true;
+      state.lastAttemptAt = now;
 
       console.log(`[scheduler] Disparando ${action} para ${employee.name} (${time})`);
       runFichar({ employee, action }).then((res) => {
+        state.inFlight = false;
         if (res.ok) {
+          state.status = 'done';
           console.log(`[scheduler] OK ${action} - ${employee.name}`);
         } else {
-          console.error(`[scheduler] ERROR ${action} - ${employee.name}: ${res.error}`);
+          console.error(`[scheduler] ERROR ${action} - ${employee.name}: ${res.error} (se reintentará)`);
         }
       });
     }
