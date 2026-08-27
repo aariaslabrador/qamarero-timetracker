@@ -150,6 +150,8 @@ function openModal(employee) {
 
   modalTitle.textContent = employee ? 'Editar empleado' : 'Añadir empleado';
   overlay.classList.remove('hidden');
+  overlay.scrollTop = 0;
+  document.getElementById('employee-name').focus();
 }
 
 document.getElementById('add-vacation-btn').addEventListener('click', () => {

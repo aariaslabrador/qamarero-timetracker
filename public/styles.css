@@ -133,9 +133,10 @@ th { color: var(--muted); font-weight: 600; }
   inset: 0;
   background: rgba(15, 17, 21, 0.4);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 16px;
+  overflow-y: auto;
 }
 .hidden { display: none !important; }
 
@@ -145,6 +146,7 @@ th { color: var(--muted); font-weight: 600; }
   padding: 24px;
   width: 100%;
   max-width: 420px;
+  margin: 5vh 0;
 }
 
 .modal h2 { margin-top: 0; }
