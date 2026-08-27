@@ -5,14 +5,21 @@
   <title>Acceder — Qamarero Timetracker</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
-<body>
-  <div class="wrap login-wrap">
-    <div class="panel">
-      <h2>Acceder al panel</h2>
+<body class="login-page">
+  <div class="login-shell">
+    <div class="login-card">
+      <div class="login-icon" aria-hidden="true">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2a5 5 0 0 0-5 5v3H6a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1h-1V7a5 5 0 0 0-5-5Zm-3 5a3 3 0 0 1 6 0v3H9V7Zm3 7a1.5 1.5 0 0 1 1 2.62V18a1 1 0 1 1-2 0v-1.38A1.5 1.5 0 0 1 12 14Z" fill="currentColor"/>
+        </svg>
+      </div>
+      <h1>Qamarero Timetracker</h1>
+      <p class="login-subtitle">Accede al panel para gestionar el fichaje de tu personal</p>
+
       <form id="login-form">
         <div class="field">
           <label for="user">Usuario</label>
-          <input type="text" id="user" autocomplete="username" required />
+          <input type="text" id="user" autocomplete="username" required autofocus />
         </div>
         <div class="field">
           <label for="pass">Contraseña</label>
@@ -29,7 +36,10 @@
       const user = document.getElementById('user').value;
       const pass = document.getElementById('pass').value;
       const errorEl = document.getElementById('error');
+      const submitBtn = e.target.querySelector('button[type="submit"]');
       errorEl.textContent = '';
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Entrando…';
       try {
         const res = await fetch('/api/login', {
           method: 'POST',
@@ -39,11 +49,15 @@
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
           errorEl.textContent = data.error || 'No se pudo iniciar sesión';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Entrar';
           return;
         }
         window.location.href = '/';
       } catch {
         errorEl.textContent = 'Error de red';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Entrar';
       }
     });
   </script>

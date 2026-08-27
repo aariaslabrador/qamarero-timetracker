@@ -45,14 +45,16 @@ button {
   background: var(--panel);
   padding: 8px 14px;
   font-size: 14px;
+  transition: background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
 }
+button:disabled { cursor: not-allowed; opacity: 0.6; }
 
 button.primary {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
 }
-button.primary:hover { background: var(--accent-dark); }
+button.primary:hover:not(:disabled) { background: var(--accent-dark); }
 
 button.danger {
   color: var(--danger);
@@ -164,10 +166,16 @@ th { color: var(--muted); font-weight: 600; }
 .field input[type="date"],
 .field input[type="number"] {
   width: 100%;
-  padding: 8px 10px;
+  padding: 9px 11px;
   border: 1px solid var(--border);
   border-radius: 8px;
   font-size: 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.field input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(22, 130, 76, 0.15);
 }
 
 .vacation-item {
@@ -225,7 +233,61 @@ th { color: var(--muted); font-weight: 600; }
   padding: 12px 0;
 }
 
-.login-wrap {
-  max-width: 340px;
-  margin: 15vh auto 0;
+/* Login */
+body.login-page {
+  min-height: 100vh;
+  background: radial-gradient(circle at 50% -10%, #e6f6ee 0%, var(--bg) 55%);
+  display: flex;
+}
+
+.login-shell {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px -8px rgba(15, 17, 21, 0.12), 0 2px 8px rgba(15, 17, 21, 0.04);
+  padding: 36px 32px 32px;
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+}
+
+.login-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card h1 {
+  font-size: 19px;
+  margin: 0 0 6px;
+}
+
+.login-subtitle {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0 0 26px;
+  line-height: 1.4;
+}
+
+.login-card form {
+  text-align: left;
+}
+
+.login-card button.primary {
+  margin-top: 4px;
+  padding: 10px 14px;
 }

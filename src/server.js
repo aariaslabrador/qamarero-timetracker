@@ -44,8 +44,12 @@ app.post('/api/logout', (req, res) => {
   req.session.destroy(() => res.json({ ok: true }));
 });
 
+// Rutas accesibles sin sesión: la propia página de login, su endpoint, y
+// los estáticos que esa página necesita para no verse sin estilo.
+const PUBLIC_PATHS = new Set(['/login.html', '/api/login', '/styles.css']);
+
 app.use((req, res, next) => {
-  if (req.path === '/login.html' || req.path === '/api/login') return next();
+  if (PUBLIC_PATHS.has(req.path)) return next();
   return requireAuth(req, res, next);
 });
 
