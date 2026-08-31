@@ -264,11 +264,19 @@ curl -I https://admin.botavaracordoba.es
 ## Notificaciones por Telegram (opcional)
 
 Si configuras `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` en el `.env`, la
-app te avisa por Telegram cuando:
+app te avisa por Telegram en tres momentos, para un fichaje automático que
+falla:
 
-- Un fichaje automático no se ha podido hacer tras 20 minutos
-  reintentándolo (necesita que lo hagas a mano desde el panel).
-- El servidor tiene un error inesperado.
+1. **Al primer fallo**: aviso inmediato con el motivo, para que puedas
+   corregirlo tú mismo o avisar al camarero para que fiche a mano en Q-POS
+   si es urgente. A partir de aquí el sistema sigue reintentando solo.
+2. **Si se recupera solo**: un mensaje de confirmación de que un reintento
+   posterior sí funcionó — para que sepas que ya no hace falta que hagas
+   nada.
+3. **Si nunca se resuelve**: tras 20 minutos reintentando sin éxito, un
+   aviso final de que hay que hacerlo a mano desde el panel.
+
+También avisa si el servidor tiene un error inesperado.
 
 ### Crear el bot y conseguir el token
 

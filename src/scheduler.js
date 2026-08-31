@@ -107,7 +107,7 @@ function pruneAttempts(dateStr) {
 
 function getAttemptState(key) {
   if (!attempts.has(key)) {
-    attempts.set(key, { status: 'pending', lastAttemptAt: 0, inFlight: false });
+    attempts.set(key, { status: 'pending', lastAttemptAt: 0, inFlight: false, hadFailure: false });
   }
   return attempts.get(key);
 }
@@ -174,8 +174,23 @@ async function tick() {
         if (res.ok) {
           state.status = 'done';
           console.log(`[scheduler] OK ${action} - ${employee.name}`);
+          if (state.hadFailure) {
+            sendTelegramMessage(
+              `✅ ${employee.name}: la ${action} se pudo fichar en un reintento. Ya está resuelto, no hace falta hacer nada.`
+            );
+          }
         } else {
           console.error(`[scheduler] ERROR ${action} - ${employee.name}: ${res.error} (se reintentará)`);
+          if (!state.hadFailure) {
+            // Aviso inmediato solo en el primer fallo, para no saturar de
+            // mensajes mientras siguen los reintentos automáticos.
+            state.hadFailure = true;
+            sendTelegramMessage(
+              `⚠️ No se pudo fichar la ${action} de ${employee.name}.\n${res.error}\n\n` +
+                `Se reintentará automáticamente durante ${RETRY_WINDOW_MINUTES} min. Si es urgente, ` +
+                'corrígelo a mano desde el panel o avisa al camarero para que lo haga él mismo en Q-POS.'
+            );
+          }
         }
       });
     }
