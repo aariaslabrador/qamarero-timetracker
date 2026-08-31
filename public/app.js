@@ -97,6 +97,7 @@ function renderLogs(logs) {
       <td>${log.action === 'entrada' ? 'Entrada' : 'Salida'}</td>
       <td><span class="badge ${log.status}">${log.status === 'ok' ? 'OK' : 'Error'}</span>
         ${log.status === 'error' ? `<div style="font-size:12px;color:#c0392b;margin-top:4px">${escapeHtml(log.error || '')}</div>` : ''}
+        ${log.screenshot ? `<a href="/api/logs/${log.id}/screenshot" target="_blank" rel="noopener" style="font-size:12px">Ver captura</a>` : ''}
       </td>
     `;
     logsBody.appendChild(tr);

@@ -193,6 +193,10 @@ function listLogs(limit = 100) {
   return load().logs.slice(0, limit);
 }
 
+function getLog(id) {
+  return load().logs.find((l) => l.id === id) || null;
+}
+
 function clearLogs() {
   const db = load();
   db.logs = [];
@@ -214,5 +218,6 @@ module.exports = {
   deleteEmployee,
   addLog,
   listLogs,
+  getLog,
   clearLogs,
 };

@@ -1,4 +1,5 @@
 require('dotenv').config();
+const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const session = require('express-session');
@@ -253,6 +254,13 @@ app.get('/api/logs', (req, res) => {
 app.delete('/api/logs', (req, res) => {
   store.clearLogs();
   res.json({ ok: true });
+});
+
+app.get('/api/logs/:id/screenshot', (req, res) => {
+  const log = store.getLog(req.params.id);
+  if (!log || !log.screenshot) return res.status(404).json({ error: 'No hay captura para este fichaje' });
+  if (!fs.existsSync(log.screenshot)) return res.status(404).json({ error: 'La captura ya no existe en el servidor' });
+  res.sendFile(log.screenshot);
 });
 
 app.get('/api/settings', (req, res) => {
