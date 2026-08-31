@@ -15,9 +15,22 @@
     </header>
 
     <div class="panel">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px">
+        <div class="field" style="margin-bottom: 0; min-width: 220px">
+          <label for="venue-select">Local</label>
+          <select id="venue-select"></select>
+        </div>
+        <button class="ghost" id="manage-venues-btn">Gestionar locales</button>
+      </div>
+    </div>
+
+    <div class="panel">
       <h2>Empleados</h2>
       <div style="margin-bottom: 12px">
         <button class="primary" id="add-employee-btn">+ Añadir empleado</button>
+      </div>
+      <div class="empty hidden" id="no-venue-selected">
+        Añade primero un local (botón "Gestionar locales" arriba) para poder dar de alta empleados.
       </div>
       <table id="employees-table">
         <thead>
@@ -149,6 +162,45 @@
           <button type="submit" class="primary">Guardar</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="venue-overlay">
+    <div class="modal">
+      <h2>Gestionar locales</h2>
+      <div id="venues-list"></div>
+
+      <hr style="border: none; border-top: 1px solid var(--border); margin: 20px 0" />
+
+      <h2 id="venue-modal-title" style="font-size: 15px">Añadir local</h2>
+      <form id="venue-form">
+        <input type="hidden" id="venue-id" />
+        <div class="field">
+          <label for="venue-name">Nombre del local</label>
+          <input type="text" id="venue-name" placeholder="Ej: Amarre" required />
+        </div>
+        <div class="field">
+          <label for="venue-restaurant-name">Nombre tal cual aparece en Q-POS al entrar (opcional)</label>
+          <input type="text" id="venue-restaurant-name" placeholder="Si es distinto al nombre del local" />
+        </div>
+        <div class="field">
+          <label for="venue-phone">Teléfono de acceso a Q-POS (9 dígitos)</label>
+          <input type="text" id="venue-phone" inputmode="numeric" pattern="\d{9}" maxlength="9" required />
+        </div>
+        <div class="field">
+          <label for="venue-pin">PIN de acceso a Q-POS (4 dígitos)</label>
+          <input type="text" id="venue-pin" inputmode="numeric" pattern="\d{4}" maxlength="4" required />
+        </div>
+        <div class="error-text" id="venue-error"></div>
+        <div class="modal-actions">
+          <button type="button" class="ghost" id="venue-form-cancel-btn">Cancelar edición</button>
+          <button type="submit" class="primary">Guardar local</button>
+        </div>
+      </form>
+
+      <div class="modal-actions">
+        <button type="button" class="ghost" id="close-venues-btn">Cerrar</button>
+      </div>
     </div>
   </div>
 

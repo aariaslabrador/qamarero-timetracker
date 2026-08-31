@@ -23,19 +23,21 @@ const MAX_JITTER_MINUTES = 15;
 // depender de una base de datos para esto.
 //
 // key = `${employeeId}:${action}:${dateStr}` -> {
-//   status: 'pending' | 'done' | 'gaveup',
-//   dueSince: primer instante (ms) en que se detectó que tocaba fichar,
-//   lastAttemptAt: último intento (ms),
+//   status: 'pending' | 'done' | 'gaveup' | 'skipped',
+//   lastAttemptAt: último intento (ms, 0 si aún no se ha intentado),
 //   inFlight: hay un intento en curso ahora mismo,
 // }
 const attempts = new Map();
 
 // Si un fichaje falla (p. ej. un timeout puntual de Q-POS), se reintenta
-// cada RETRY_COOLDOWN_MS hasta RETRY_WINDOW_MS después de la hora que
-// tocaba. Esto evita que un fallo aislado en la entrada deje al empleado
-// "no encontrado en turno" cuando llegue la hora de la salida.
+// cada RETRY_COOLDOWN_MS durante RETRY_WINDOW_MINUTES después de la hora
+// que tocaba, para no dejar al empleado "no encontrado en turno" cuando
+// llegue el siguiente fichaje. Pasado ese margen SIEMPRE se deja de
+// intentar: el margen se cuenta desde la hora programada, no desde que el
+// proceso lo detectó, para que un reinicio del servicio horas después de
+// un turno ya terminado no dispare fichajes con horas de retraso.
 const RETRY_COOLDOWN_MS = 2 * 60 * 1000;
-const RETRY_WINDOW_MS = 20 * 60 * 1000;
+const RETRY_WINDOW_MINUTES = 20;
 
 // Hora "real" (con la variación aleatoria del día ya aplicada) de cada
 // entrada/salida. Se calcula una sola vez por empleado y por día, para que
@@ -105,9 +107,14 @@ function pruneAttempts(dateStr) {
 
 function getAttemptState(key) {
   if (!attempts.has(key)) {
-    attempts.set(key, { status: 'pending', dueSince: null, lastAttemptAt: 0, inFlight: false });
+    attempts.set(key, { status: 'pending', lastAttemptAt: 0, inFlight: false });
   }
   return attempts.get(key);
+}
+
+function toMinutes(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
 }
 
 async function tick() {
@@ -128,23 +135,33 @@ async function tick() {
       ['entrada', entrada],
       ['salida', salida],
     ]) {
-      if (time < target) continue; // todavía no toca
+      const minutesPast = toMinutes(time) - toMinutes(target);
+      if (minutesPast < 0) continue; // todavía no toca
 
       const key = `${employee.id}:${action}:${dateStr}`;
       const state = getAttemptState(key);
       if (state.status !== 'pending' || state.inFlight) continue;
 
-      const now = Date.now();
-      if (!state.dueSince) state.dueSince = now;
-
-      if (now - state.dueSince > RETRY_WINDOW_MS) {
-        state.status = 'gaveup';
-        const msg = `⚠️ No se pudo fichar la ${action} de ${employee.name} tras 20 minutos reintentando. Hazlo a mano desde el panel.`;
-        console.error(`[scheduler] ${msg}`);
-        sendTelegramMessage(msg);
+      if (minutesPast > RETRY_WINDOW_MINUTES) {
+        if (state.lastAttemptAt > 0) {
+          // Se intentó de verdad y siguió fallando hasta agotar el margen:
+          // esto sí necesita que alguien lo revise.
+          state.status = 'gaveup';
+          const msg = `⚠️ No se pudo fichar la ${action} de ${employee.name} tras varios reintentos. Hazlo a mano desde el panel.`;
+          console.error(`[scheduler] ${msg}`);
+          sendTelegramMessage(msg);
+        } else {
+          // Nunca se llegó a intentar dentro del margen (p. ej. el
+          // servicio estuvo parado): no se dispara con horas de retraso.
+          state.status = 'skipped';
+          console.warn(
+            `[scheduler] Se saltó ${action} de ${employee.name}: ya habían pasado más de ${RETRY_WINDOW_MINUTES} min de la hora programada.`
+          );
+        }
         continue;
       }
 
+      const now = Date.now();
       if (now - state.lastAttemptAt < RETRY_COOLDOWN_MS) continue;
 
       state.inFlight = true;

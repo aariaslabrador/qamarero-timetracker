@@ -70,12 +70,66 @@ const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
+function validateVenuePayload(body) {
+  const errors = [];
+  if (!body.name || !String(body.name).trim()) errors.push('El nombre del local es obligatorio');
+  if (!/^\d{9}$/.test(String(body.accessPhone || ''))) errors.push('El teléfono de acceso debe tener 9 dígitos');
+  if (!/^\d{4}$/.test(String(body.accessPin || ''))) errors.push('El PIN de acceso debe tener 4 dígitos');
+  return { errors };
+}
+
+app.get('/api/venues', (req, res) => {
+  res.json(store.listVenues());
+});
+
+app.post('/api/venues', (req, res) => {
+  const { errors } = validateVenuePayload(req.body);
+  if (errors.length) return res.status(400).json({ error: errors.join(', ') });
+
+  const venue = store.createVenue({
+    name: String(req.body.name).trim(),
+    restaurantName: String(req.body.restaurantName || req.body.name).trim(),
+    accessPhone: String(req.body.accessPhone),
+    accessPin: String(req.body.accessPin),
+  });
+  res.status(201).json(venue);
+});
+
+app.put('/api/venues/:id', (req, res) => {
+  const existing = store.getVenue(req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Local no encontrado' });
+
+  const { errors } = validateVenuePayload(req.body);
+  if (errors.length) return res.status(400).json({ error: errors.join(', ') });
+
+  const updated = store.updateVenue(req.params.id, {
+    name: String(req.body.name).trim(),
+    restaurantName: String(req.body.restaurantName || req.body.name).trim(),
+    accessPhone: String(req.body.accessPhone),
+    accessPin: String(req.body.accessPin),
+  });
+  res.json(updated);
+});
+
+app.delete('/api/venues/:id', (req, res) => {
+  const employeeCount = store.listEmployees(req.params.id).length;
+  if (employeeCount > 0) {
+    return res.status(400).json({
+      error: `No se puede eliminar: hay ${employeeCount} empleado(s) asignados a este local. Reasígnalos o bórralos primero.`,
+    });
+  }
+  const ok = store.deleteVenue(req.params.id);
+  if (!ok) return res.status(404).json({ error: 'Local no encontrado' });
+  res.json({ ok: true });
+});
+
 function validateEmployeePayload(body) {
   const errors = [];
   if (!body.name || !String(body.name).trim()) errors.push('El nombre es obligatorio');
   if (!body.displayName || !String(body.displayName).trim()) {
     errors.push('El nombre tal cual aparece en Q-POS es obligatorio');
   }
+  if (!body.venueId || !store.getVenue(body.venueId)) errors.push('Selecciona un local válido');
   if (!/^\d{4}$/.test(String(body.pin || ''))) errors.push('El PIN debe tener 4 dígitos');
   const days = Array.isArray(body.days) ? body.days.filter((d) => DAY_KEYS.includes(d)) : [];
   if (!/^\d{2}:\d{2}$/.test(body.start || '')) errors.push('Hora de inicio inválida');
@@ -103,7 +157,7 @@ function validateEmployeePayload(body) {
 }
 
 app.get('/api/employees', (req, res) => {
-  res.json(store.listEmployees());
+  res.json(store.listEmployees(req.query.venueId));
 });
 
 app.post('/api/employees', (req, res) => {
@@ -120,6 +174,7 @@ app.post('/api/employees', (req, res) => {
     displayName: String(req.body.displayName || '').trim(),
     jitterMinutes,
     vacations,
+    venueId: req.body.venueId,
   });
   res.status(201).json(employee);
 });
@@ -141,6 +196,7 @@ app.put('/api/employees/:id', (req, res) => {
     displayName: String(req.body.displayName || '').trim(),
     jitterMinutes,
     vacations,
+    venueId: req.body.venueId,
   });
   res.json(updated);
 });

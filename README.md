@@ -1,19 +1,22 @@
 # Qamarero Timetracker
 
 Panel web para automatizar el fichaje de entrada y salida del personal en
-[pos.qamarero.com](https://pos.qamarero.com/) (Q-POS). Permite dar de alta y
-baja empleados, y definir sus días de trabajo y horario de entrada/salida
-desde el navegador. Un planificador interno comprueba cada minuto si algún
-empleado tiene una entrada o salida programada y, si es así, abre un
-navegador headless, entra en Q-POS y ficha por él.
+[pos.qamarero.com](https://pos.qamarero.com/) (Q-POS), con soporte para
+**varios locales** (cada uno con su propio teléfono/PIN de acceso a Q-POS).
+Permite dar de alta y baja locales y empleados, y definir sus días de
+trabajo y horario de entrada/salida desde el navegador. Un planificador
+interno comprueba cada minuto si algún empleado tiene una entrada o salida
+programada y, si es así, abre un navegador headless, entra en Q-POS con las
+credenciales de su local y ficha por él.
 
 ## Cómo funciona
 
-1. Con el teléfono y PIN de acceso general a Q-POS (`ACCESS_PHONE` /
-   `ACCESS_PIN`), el script hace login en la app.
-2. Pulsa el logo del local (arriba a la izquierda, identificado por
-   `RESTAURANT_NAME`) para entrar directamente en la pantalla de
-   **Personal**, busca al empleado por su nombre y pulsa su tarjeta.
+1. Con el teléfono y PIN de acceso del **local del empleado**, el script
+   hace login en Q-POS.
+2. Pulsa el logo del local (arriba a la izquierda, el nombre que Q-POS
+   muestra al entrar con esas credenciales) para entrar directamente en la
+   pantalla de **Personal**, busca al empleado por su nombre y pulsa su
+   tarjeta.
 3. Si el empleado está "Fuera de turno", introduce su PIN de 4 dígitos para
    **fichar entrada**.
 4. Si está "En turno", pulsa **Fin de turno** y vuelve a introducir su PIN
@@ -39,10 +42,10 @@ cp .env.example .env
 
 Edita `.env`:
 
-- `ACCESS_PHONE` / `ACCESS_PIN`: el teléfono y PIN de acceso general a Q-POS
-  (el login inicial de la app, **no** el PIN de cada empleado).
-- `RESTAURANT_NAME`: el nombre exacto de tu local tal cual aparece en el
-  logo de arriba a la izquierda en Q-POS (por ejemplo `Botavara`).
+- `ACCESS_PHONE` / `ACCESS_PIN` / `RESTAURANT_NAME`: solo se usan la
+  primera vez que arranca la app, para crear tu primer local
+  automáticamente. Los demás locales (y si quieres, también este) se
+  gestionan después desde el panel, sin tocar el `.env`.
 - `WEB_ADMIN_USER` / `WEB_ADMIN_PASS`: usuario y contraseña para entrar a
   este panel (guarda los PINs de tus empleados, protégelo).
 - `SESSION_SECRET`: cualquier cadena larga y aleatoria.
@@ -67,6 +70,11 @@ npm start
 Abre `http://localhost:3000`, entra con `WEB_ADMIN_USER` / `WEB_ADMIN_PASS`
 y desde el panel:
 
+- **Gestionar locales**: da de alta cada local (Botavara, Amarre, ...) con
+  su nombre, su teléfono y PIN de acceso a Q-POS, y opcionalmente el nombre
+  que Q-POS muestra al entrar si es distinto del nombre del local. El
+  selector de arriba del todo cambia entre locales: los empleados que ves y
+  añades son siempre los del local seleccionado en ese momento.
 - **Añadir empleado**: su nombre completo, el nombre **exacto** tal cual
   aparece en su tarjeta dentro de Q-POS (p. ej. "Angel A.", con mayúsculas y
   puntos incluidos — es lo que el script usa para encontrarlo sin

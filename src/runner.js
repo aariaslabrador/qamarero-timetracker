@@ -12,11 +12,26 @@ async function runFichar({ employee, action }) {
   const startedAt = new Date().toISOString();
   let browser = null;
 
+  const venue = employee.venueId ? store.getVenue(employee.venueId) : null;
+  if (!venue) {
+    const message = `${employee.name} no tiene un local asignado (o el local se eliminó). Edítalo desde el panel.`;
+    store.addLog({
+      employeeId: employee.id,
+      employeeName: employee.name,
+      action,
+      status: 'error',
+      error: message,
+      startedAt,
+      finishedAt: new Date().toISOString(),
+    });
+    return { ok: false, error: message };
+  }
+
   try {
-    const restaurantName = process.env.RESTAURANT_NAME;
+    const restaurantName = venue.restaurantName || venue.name;
     browser = await chromium.launch({ headless });
     const page = await browser.newPage();
-    await login(page, process.env.ACCESS_PHONE, process.env.ACCESS_PIN, restaurantName);
+    await login(page, venue.accessPhone, venue.accessPin, restaurantName);
     await fichar(page, {
       name: employee.name,
       pin: employee.pin,

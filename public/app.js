@@ -3,12 +3,15 @@ const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
 const employeesBody = document.getElementById('employees-body');
 const employeesEmpty = document.getElementById('employees-empty');
+const noVenueSelected = document.getElementById('no-venue-selected');
 const logsBody = document.getElementById('logs-body');
 const logsEmpty = document.getElementById('logs-empty');
 const overlay = document.getElementById('employee-overlay');
 const form = document.getElementById('employee-form');
 const modalTitle = document.getElementById('modal-title');
 const errorEl = document.getElementById('employee-error');
+const venueSelect = document.getElementById('venue-select');
+const addEmployeeBtn = document.getElementById('add-employee-btn');
 
 async function api(path, options) {
   const res = await fetch(path, {
@@ -97,11 +100,50 @@ function escapeHtml(str) {
 }
 
 let employeesCache = [];
+let venuesCache = [];
+let selectedVenueId = localStorage.getItem('selectedVenueId') || '';
 
 async function loadEmployees() {
-  employeesCache = await api('/api/employees');
+  if (!selectedVenueId) {
+    employeesCache = [];
+    employeesBody.innerHTML = '';
+    employeesEmpty.classList.add('hidden');
+    noVenueSelected.classList.remove('hidden');
+    return;
+  }
+  noVenueSelected.classList.add('hidden');
+  employeesCache = await api(`/api/employees?venueId=${encodeURIComponent(selectedVenueId)}`);
   renderEmployees(employeesCache);
 }
+
+function renderVenueSelect() {
+  if (!venuesCache.length) {
+    venueSelect.innerHTML = '<option value="">Sin locales todavía</option>';
+    selectedVenueId = '';
+  } else {
+    if (!venuesCache.some((v) => v.id === selectedVenueId)) {
+      selectedVenueId = venuesCache[0].id;
+    }
+    venueSelect.innerHTML = venuesCache
+      .map((v) => `<option value="${v.id}" ${v.id === selectedVenueId ? 'selected' : ''}>${escapeHtml(v.name)}</option>`)
+      .join('');
+  }
+  localStorage.setItem('selectedVenueId', selectedVenueId);
+  addEmployeeBtn.disabled = !selectedVenueId;
+}
+
+async function loadVenues() {
+  venuesCache = await api('/api/venues');
+  renderVenueSelect();
+  renderVenuesList();
+}
+
+venueSelect.addEventListener('change', async () => {
+  selectedVenueId = venueSelect.value;
+  localStorage.setItem('selectedVenueId', selectedVenueId);
+  addEmployeeBtn.disabled = !selectedVenueId;
+  await loadEmployees();
+});
 
 async function loadLogs() {
   const logs = await api('/api/logs');
@@ -183,6 +225,112 @@ function closeModal() {
   overlay.classList.add('hidden');
 }
 
+function renderVenuesList() {
+  const container = document.getElementById('venues-list');
+  if (!venuesCache.length) {
+    container.innerHTML = '<p class="empty" style="padding: 0">Todavía no has añadido ningún local.</p>';
+    return;
+  }
+  container.innerHTML = venuesCache
+    .map(
+      (v) => `
+        <div class="vacation-item">
+          <span>${escapeHtml(v.name)}</span>
+          <div class="row-actions">
+            <button type="button" class="ghost" data-edit-venue="${v.id}">Editar</button>
+            <button type="button" class="danger" data-delete-venue="${v.id}">Eliminar</button>
+          </div>
+        </div>
+      `
+    )
+    .join('');
+}
+
+const venueOverlay = document.getElementById('venue-overlay');
+const venueForm = document.getElementById('venue-form');
+const venueErrorEl = document.getElementById('venue-error');
+const venueModalTitle = document.getElementById('venue-modal-title');
+
+function resetVenueForm() {
+  venueForm.reset();
+  venueErrorEl.textContent = '';
+  document.getElementById('venue-id').value = '';
+  venueModalTitle.textContent = 'Añadir local';
+}
+
+function openVenueForEdit(venue) {
+  document.getElementById('venue-id').value = venue.id;
+  document.getElementById('venue-name').value = venue.name;
+  document.getElementById('venue-restaurant-name').value = venue.restaurantName || '';
+  document.getElementById('venue-phone').value = venue.accessPhone;
+  document.getElementById('venue-pin').value = venue.accessPin;
+  venueModalTitle.textContent = 'Editar local';
+  document.getElementById('venue-name').focus();
+}
+
+document.getElementById('manage-venues-btn').addEventListener('click', () => {
+  resetVenueForm();
+  venueOverlay.classList.remove('hidden');
+  venueOverlay.scrollTop = 0;
+});
+
+document.getElementById('close-venues-btn').addEventListener('click', () => {
+  venueOverlay.classList.add('hidden');
+});
+
+document.getElementById('venue-form-cancel-btn').addEventListener('click', resetVenueForm);
+
+venueOverlay.addEventListener('click', (e) => {
+  if (e.target === venueOverlay) venueOverlay.classList.add('hidden');
+});
+
+venueForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  venueErrorEl.textContent = '';
+
+  const id = document.getElementById('venue-id').value;
+  const payload = {
+    name: document.getElementById('venue-name').value.trim(),
+    restaurantName: document.getElementById('venue-restaurant-name').value.trim(),
+    accessPhone: document.getElementById('venue-phone').value.trim(),
+    accessPin: document.getElementById('venue-pin').value.trim(),
+  };
+
+  try {
+    if (id) {
+      await api(`/api/venues/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+    } else {
+      await api('/api/venues', { method: 'POST', body: JSON.stringify(payload) });
+    }
+    resetVenueForm();
+    await loadVenues();
+    await loadEmployees();
+  } catch (err) {
+    venueErrorEl.textContent = err.message;
+  }
+});
+
+document.getElementById('venues-list').addEventListener('click', async (e) => {
+  const editBtn = e.target.closest('button[data-edit-venue]');
+  const deleteBtn = e.target.closest('button[data-delete-venue]');
+
+  if (editBtn) {
+    const venue = venuesCache.find((v) => v.id === editBtn.dataset.editVenue);
+    if (venue) openVenueForEdit(venue);
+  } else if (deleteBtn) {
+    const venue = venuesCache.find((v) => v.id === deleteBtn.dataset.deleteVenue);
+    if (!venue) return;
+    if (!confirm(`¿Eliminar el local "${venue.name}"?`)) return;
+    try {
+      await api(`/api/venues/${venue.id}`, { method: 'DELETE' });
+      await loadVenues();
+      await loadEmployees();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+});
+
 document.getElementById('add-employee-btn').addEventListener('click', () => openModal(null));
 document.getElementById('cancel-employee-btn').addEventListener('click', closeModal);
 overlay.addEventListener('click', (e) => {
@@ -206,6 +354,7 @@ form.addEventListener('submit', async (e) => {
     active: document.getElementById('employee-active').checked,
     days,
     vacations: currentVacations,
+    venueId: selectedVenueId,
   };
 
   try {
@@ -283,6 +432,11 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
   window.location.href = '/login.html';
 });
 
-loadEmployees();
+async function init() {
+  await loadVenues();
+  await loadEmployees();
+}
+
+init();
 loadLogs();
 setInterval(loadLogs, 15000);
