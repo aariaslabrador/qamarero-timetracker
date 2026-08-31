@@ -105,25 +105,47 @@
           <input type="text" id="employee-pin" inputmode="numeric" pattern="\d{4}" maxlength="4" required />
         </div>
         <div class="field">
-          <label>Días de trabajo</label>
-          <div class="day-picker" id="day-picker">
-            <label><input type="checkbox" value="mon" /> Lun</label>
-            <label><input type="checkbox" value="tue" /> Mar</label>
-            <label><input type="checkbox" value="wed" /> Mié</label>
-            <label><input type="checkbox" value="thu" /> Jue</label>
-            <label><input type="checkbox" value="fri" /> Vie</label>
-            <label><input type="checkbox" value="sat" /> Sáb</label>
-            <label><input type="checkbox" value="sun" /> Dom</label>
+          <label>Horario semanal</label>
+          <div id="schedule-editor">
+            <div class="schedule-row" data-day="mon">
+              <label><input type="checkbox" class="schedule-enabled" /> Lunes</label>
+              <input type="time" class="schedule-start" value="09:00" />
+              <input type="time" class="schedule-end" value="17:00" />
+            </div>
+            <div class="schedule-row" data-day="tue">
+              <label><input type="checkbox" class="schedule-enabled" /> Martes</label>
+              <input type="time" class="schedule-start" value="09:00" />
+              <input type="time" class="schedule-end" value="17:00" />
+            </div>
+            <div class="schedule-row" data-day="wed">
+              <label><input type="checkbox" class="schedule-enabled" /> Miércoles</label>
+              <input type="time" class="schedule-start" value="09:00" />
+              <input type="time" class="schedule-end" value="17:00" />
+            </div>
+            <div class="schedule-row" data-day="thu">
+              <label><input type="checkbox" class="schedule-enabled" /> Jueves</label>
+              <input type="time" class="schedule-start" value="09:00" />
+              <input type="time" class="schedule-end" value="17:00" />
+            </div>
+            <div class="schedule-row" data-day="fri">
+              <label><input type="checkbox" class="schedule-enabled" /> Viernes</label>
+              <input type="time" class="schedule-start" value="09:00" />
+              <input type="time" class="schedule-end" value="17:00" />
+            </div>
+            <div class="schedule-row" data-day="sat">
+              <label><input type="checkbox" class="schedule-enabled" /> Sábado</label>
+              <input type="time" class="schedule-start" value="09:00" />
+              <input type="time" class="schedule-end" value="17:00" />
+            </div>
+            <div class="schedule-row" data-day="sun">
+              <label><input type="checkbox" class="schedule-enabled" /> Domingo</label>
+              <input type="time" class="schedule-start" value="09:00" />
+              <input type="time" class="schedule-end" value="17:00" />
+            </div>
           </div>
-        </div>
-        <div class="time-row">
-          <div class="field">
-            <label for="employee-start">Hora de entrada</label>
-            <input type="time" id="employee-start" required />
-          </div>
-          <div class="field">
-            <label for="employee-end">Hora de salida</label>
-            <input type="time" id="employee-end" required />
+          <div style="font-size: 12px; color: var(--muted); margin-top: 4px">
+            Marca los días que trabaja y pon su horario de entrada/salida de
+            cada uno — puede ser distinto en cada día.
           </div>
         </div>
         <div class="field">

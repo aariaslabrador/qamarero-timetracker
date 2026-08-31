@@ -43,15 +43,34 @@ function migrateLegacyVenue(db) {
   return db;
 }
 
+// Los empleados guardaban un único horario (days[] + start + end) aplicado
+// a todos sus días de trabajo. Al pasar a horario por día, se convierte a
+// `schedule: [{ day, start, end }, ...]` la primera vez que se cargan.
+function migrateLegacySchedule(db) {
+  let changed = false;
+  db.employees = db.employees.map((e) => {
+    if (e.schedule) return e;
+    changed = true;
+    const { days, start, end, ...rest } = e;
+    return {
+      ...rest,
+      schedule: (days || []).map((day) => ({ day, start, end })),
+    };
+  });
+  if (changed) save(db);
+  return db;
+}
+
 function load() {
   ensureFile();
   const raw = fs.readFileSync(DB_FILE, 'utf8');
-  const db = JSON.parse(raw);
+  let db = JSON.parse(raw);
   db.settings = db.settings || DEFAULT_DB.settings;
   db.venues = db.venues || [];
   db.employees = db.employees || [];
   db.logs = db.logs || [];
-  return migrateLegacyVenue(db);
+  db = migrateLegacyVenue(db);
+  return migrateLegacySchedule(db);
 }
 
 function save(db) {
@@ -122,9 +141,7 @@ function createEmployee({
   name,
   pin,
   active = true,
-  days = [],
-  start = '09:00',
-  end = '17:00',
+  schedule = [],
   displayName = '',
   jitterMinutes = 5,
   vacations = [],
@@ -136,9 +153,7 @@ function createEmployee({
     name,
     pin,
     active,
-    days,
-    start,
-    end,
+    schedule,
     displayName,
     jitterMinutes,
     vacations,

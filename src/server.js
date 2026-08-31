@@ -131,9 +131,32 @@ function validateEmployeePayload(body) {
   }
   if (!body.venueId || !store.getVenue(body.venueId)) errors.push('Selecciona un local válido');
   if (!/^\d{4}$/.test(String(body.pin || ''))) errors.push('El PIN debe tener 4 dígitos');
-  const days = Array.isArray(body.days) ? body.days.filter((d) => DAY_KEYS.includes(d)) : [];
-  if (!/^\d{2}:\d{2}$/.test(body.start || '')) errors.push('Hora de inicio inválida');
-  if (!/^\d{2}:\d{2}$/.test(body.end || '')) errors.push('Hora de cierre inválida');
+
+  const TIME_RE = /^\d{2}:\d{2}$/;
+  const rawSchedule = Array.isArray(body.schedule) ? body.schedule : [];
+  const schedule = [];
+  const seenDays = new Set();
+  for (const s of rawSchedule) {
+    if (!s || !DAY_KEYS.includes(s.day)) {
+      errors.push('Día de horario inválido');
+      continue;
+    }
+    if (seenDays.has(s.day)) {
+      errors.push('No puedes repetir el mismo día en el horario');
+      continue;
+    }
+    if (!TIME_RE.test(s.start || '') || !TIME_RE.test(s.end || '')) {
+      errors.push(`Horario inválido para ${s.day}`);
+      continue;
+    }
+    if (s.start >= s.end) {
+      errors.push(`En ${s.day}, la hora de entrada debe ser anterior a la de salida`);
+      continue;
+    }
+    seenDays.add(s.day);
+    schedule.push({ day: s.day, start: s.start, end: s.end });
+  }
+  if (schedule.length === 0) errors.push('Marca al menos un día de trabajo');
 
   let jitterMinutes = Number(body.jitterMinutes);
   if (Number.isNaN(jitterMinutes)) jitterMinutes = 0;
@@ -153,7 +176,7 @@ function validateEmployeePayload(body) {
     vacations.push({ from: v.from, to: v.to });
   }
 
-  return { errors, days, jitterMinutes, vacations };
+  return { errors, schedule, jitterMinutes, vacations };
 }
 
 app.get('/api/employees', (req, res) => {
@@ -161,16 +184,14 @@ app.get('/api/employees', (req, res) => {
 });
 
 app.post('/api/employees', (req, res) => {
-  const { errors, days, jitterMinutes, vacations } = validateEmployeePayload(req.body);
+  const { errors, schedule, jitterMinutes, vacations } = validateEmployeePayload(req.body);
   if (errors.length) return res.status(400).json({ error: errors.join(', ') });
 
   const employee = store.createEmployee({
     name: String(req.body.name).trim(),
     pin: String(req.body.pin),
     active: req.body.active !== false,
-    days,
-    start: req.body.start,
-    end: req.body.end,
+    schedule,
     displayName: String(req.body.displayName || '').trim(),
     jitterMinutes,
     vacations,
@@ -183,16 +204,14 @@ app.put('/api/employees/:id', (req, res) => {
   const existing = store.getEmployee(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Empleado no encontrado' });
 
-  const { errors, days, jitterMinutes, vacations } = validateEmployeePayload(req.body);
+  const { errors, schedule, jitterMinutes, vacations } = validateEmployeePayload(req.body);
   if (errors.length) return res.status(400).json({ error: errors.join(', ') });
 
   const updated = store.updateEmployee(req.params.id, {
     name: String(req.body.name).trim(),
     pin: String(req.body.pin),
     active: req.body.active !== false,
-    days,
-    start: req.body.start,
-    end: req.body.end,
+    schedule,
     displayName: String(req.body.displayName || '').trim(),
     jitterMinutes,
     vacations,

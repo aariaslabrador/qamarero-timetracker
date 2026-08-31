@@ -27,11 +27,21 @@ async function api(path, options) {
   return data;
 }
 
-function dayChips(days) {
+function dayChips(schedule) {
+  const activeDays = new Set(schedule.map((s) => s.day));
   return DAY_ORDER.map((d) => {
-    const active = days.includes(d) ? 'active' : '';
+    const active = activeDays.has(d) ? 'active' : '';
     return `<span class="day-chip ${active}">${DAY_LABELS[d]}</span>`;
   }).join('');
+}
+
+function scheduleSummary(schedule) {
+  if (!schedule.length) return '—';
+  return schedule
+    .slice()
+    .sort((a, b) => DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day))
+    .map((s) => `${DAY_LABELS[s.day]} ${s.start}–${s.end}`)
+    .join(', ');
 }
 
 function todayStr() {
@@ -55,8 +65,8 @@ function renderEmployees(employees) {
         ${escapeHtml(emp.name)}
         ${emp.displayName ? `<div style="font-size:12px;color:var(--muted)">Q-POS: ${escapeHtml(emp.displayName)}</div>` : ''}
       </td>
-      <td><div class="days">${dayChips(emp.days || [])}</div></td>
-      <td>${emp.start} – ${emp.end}</td>
+      <td><div class="days">${dayChips(emp.schedule || [])}</div></td>
+      <td style="font-size: 13px">${scheduleSummary(emp.schedule || [])}</td>
       <td>
         <span class="badge ${emp.active ? 'on' : 'off'}">${emp.active ? 'Activo' : 'Pausado'}</span>
         ${isOnVacationToday(emp) ? '<div style="margin-top:4px"><span class="badge off">De vacaciones</span></div>' : ''}
@@ -170,6 +180,44 @@ function renderVacationList() {
     .join('');
 }
 
+function setScheduleEditor(schedule) {
+  const byDay = new Map(schedule.map((s) => [s.day, s]));
+  document.querySelectorAll('#schedule-editor .schedule-row').forEach((row) => {
+    const day = row.dataset.day;
+    const enabled = row.querySelector('.schedule-enabled');
+    const start = row.querySelector('.schedule-start');
+    const end = row.querySelector('.schedule-end');
+    const entry = byDay.get(day);
+
+    enabled.checked = Boolean(entry);
+    start.value = entry ? entry.start : '09:00';
+    end.value = entry ? entry.end : '17:00';
+    start.disabled = !entry;
+    end.disabled = !entry;
+  });
+}
+
+function readScheduleEditor() {
+  const schedule = [];
+  document.querySelectorAll('#schedule-editor .schedule-row').forEach((row) => {
+    const enabled = row.querySelector('.schedule-enabled');
+    if (!enabled.checked) return;
+    schedule.push({
+      day: row.dataset.day,
+      start: row.querySelector('.schedule-start').value,
+      end: row.querySelector('.schedule-end').value,
+    });
+  });
+  return schedule;
+}
+
+document.getElementById('schedule-editor').addEventListener('change', (e) => {
+  if (!e.target.classList.contains('schedule-enabled')) return;
+  const row = e.target.closest('.schedule-row');
+  row.querySelector('.schedule-start').disabled = !e.target.checked;
+  row.querySelector('.schedule-end').disabled = !e.target.checked;
+});
+
 function openModal(employee) {
   form.reset();
   errorEl.textContent = '';
@@ -177,15 +225,10 @@ function openModal(employee) {
   document.getElementById('employee-name').value = employee ? employee.name : '';
   document.getElementById('employee-display-name').value = employee ? employee.displayName || '' : '';
   document.getElementById('employee-pin').value = employee ? employee.pin : '';
-  document.getElementById('employee-start').value = employee ? employee.start : '09:00';
-  document.getElementById('employee-end').value = employee ? employee.end : '17:00';
   document.getElementById('employee-jitter').value = employee ? (employee.jitterMinutes ?? 5) : 5;
   document.getElementById('employee-active').checked = employee ? employee.active : true;
 
-  const days = employee ? employee.days || [] : [];
-  document.querySelectorAll('#day-picker input[type="checkbox"]').forEach((cb) => {
-    cb.checked = days.includes(cb.value);
-  });
+  setScheduleEditor(employee ? employee.schedule || [] : []);
 
   currentVacations = employee ? [...(employee.vacations || [])] : [];
   renderVacationList();
@@ -342,17 +385,14 @@ form.addEventListener('submit', async (e) => {
   errorEl.textContent = '';
 
   const id = document.getElementById('employee-id').value;
-  const days = Array.from(document.querySelectorAll('#day-picker input:checked')).map((cb) => cb.value);
 
   const payload = {
     name: document.getElementById('employee-name').value.trim(),
     displayName: document.getElementById('employee-display-name').value.trim(),
     pin: document.getElementById('employee-pin').value.trim(),
-    start: document.getElementById('employee-start').value,
-    end: document.getElementById('employee-end').value,
     jitterMinutes: Number(document.getElementById('employee-jitter').value) || 0,
     active: document.getElementById('employee-active').checked,
-    days,
+    schedule: readScheduleEditor(),
     vacations: currentVacations,
     venueId: selectedVenueId,
   };

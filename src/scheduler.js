@@ -78,12 +78,12 @@ function randomOffset(maxMinutes) {
   return Math.round((Math.random() * 2 - 1) * capped);
 }
 
-function getJitteredTimes(employee, dateStr) {
+function getJitteredTimes(employee, daySchedule, dateStr) {
   const key = `${employee.id}:${dateStr}`;
   if (!jitterCache.has(key)) {
     jitterCache.set(key, {
-      entrada: addMinutes(employee.start, randomOffset(employee.jitterMinutes)),
-      salida: addMinutes(employee.end, randomOffset(employee.jitterMinutes)),
+      entrada: addMinutes(daySchedule.start, randomOffset(employee.jitterMinutes)),
+      salida: addMinutes(daySchedule.end, randomOffset(employee.jitterMinutes)),
     });
   }
   return jitterCache.get(key);
@@ -126,10 +126,11 @@ async function tick() {
   const employees = store.listEmployees().filter((e) => e.active);
 
   for (const employee of employees) {
-    if (!employee.days || !employee.days.includes(day)) continue;
+    const daySchedule = (employee.schedule || []).find((s) => s.day === day);
+    if (!daySchedule) continue;
     if (isOnVacation(employee, dateStr)) continue;
 
-    const { entrada, salida } = getJitteredTimes(employee, dateStr);
+    const { entrada, salida } = getJitteredTimes(employee, daySchedule, dateStr);
 
     for (const [action, target] of [
       ['entrada', entrada],

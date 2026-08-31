@@ -78,8 +78,10 @@ y desde el panel:
 - **Añadir empleado**: su nombre completo, el nombre **exacto** tal cual
   aparece en su tarjeta dentro de Q-POS (p. ej. "Angel A.", con mayúsculas y
   puntos incluidos — es lo que el script usa para encontrarlo sin
-  confundirlo con otro empleado), su PIN de 4 dígitos, días de trabajo y
-  hora de entrada/salida.
+  confundirlo con otro empleado), su PIN de 4 dígitos, y su horario semanal:
+  marca los días que trabaja y pon la hora de entrada/salida de cada uno
+  (puede ser distinta en cada día, por ejemplo lunes 09:00–13:00 y viernes
+  18:00–23:00).
 - **Variación aleatoria (minutos)**: cada día ficha unos minutos antes o
   después de la hora programada (hasta el máximo que indiques, tope 15
   minutos), para que no fiche a la hora exacta todos los días. La hora real
