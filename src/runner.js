@@ -54,13 +54,17 @@ async function runFichar({ employee, action }) {
     try {
       if (browser) {
         fs.mkdirSync(ERRORS_DIR, { recursive: true });
-        screenshot = path.join(ERRORS_DIR, `${action}-${employee.id}-${Date.now()}.png`);
+        const candidate = path.join(ERRORS_DIR, `${action}-${employee.id}-${Date.now()}.png`);
         const pages = browser.contexts().flatMap((c) => c.pages());
-        if (pages[0]) await pages[0].screenshot({ path: screenshot });
-        else screenshot = null;
+        if (pages[0]) {
+          await pages[0].screenshot({ path: candidate });
+          screenshot = candidate;
+        } else {
+          console.error('[runner] No se pudo guardar captura: no hay ninguna página abierta en el navegador.');
+        }
       }
-    } catch {
-      screenshot = null;
+    } catch (screenshotErr) {
+      console.error('[runner] No se pudo guardar la captura del error:', screenshotErr.message);
     }
 
     const message = browser
