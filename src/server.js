@@ -74,7 +74,7 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 function validateVenuePayload(body) {
   const errors = [];
   if (!body.name || !String(body.name).trim()) errors.push('El nombre del local es obligatorio');
-  if (!/^\d{9}$/.test(String(body.accessPhone || ''))) errors.push('El teléfono de acceso debe tener 9 dígitos');
+  if (!/^\d{6,15}$/.test(String(body.accessPhone || ''))) errors.push('El teléfono de acceso debe tener solo dígitos (entre 6 y 15)');
   if (!/^\d{4}$/.test(String(body.accessPin || ''))) errors.push('El PIN de acceso debe tener 4 dígitos');
   return { errors };
 }

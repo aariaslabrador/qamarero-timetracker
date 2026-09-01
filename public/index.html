@@ -206,8 +206,8 @@
           <input type="text" id="venue-restaurant-name" placeholder="Si es distinto al nombre del local" />
         </div>
         <div class="field">
-          <label for="venue-phone">Teléfono de acceso a Q-POS (9 dígitos)</label>
-          <input type="text" id="venue-phone" inputmode="numeric" pattern="\d{9}" maxlength="9" required />
+          <label for="venue-phone">Teléfono de acceso a Q-POS (solo dígitos)</label>
+          <input type="text" id="venue-phone" inputmode="numeric" pattern="\d{6,15}" maxlength="15" required />
         </div>
         <div class="field">
           <label for="venue-pin">PIN de acceso a Q-POS (4 dígitos)</label>
