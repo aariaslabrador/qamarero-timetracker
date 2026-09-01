@@ -150,8 +150,8 @@ function validateEmployeePayload(body) {
       errors.push(`Horario inválido para ${s.day}`);
       continue;
     }
-    if (s.start >= s.end) {
-      errors.push(`En ${s.day}, la hora de entrada debe ser anterior a la de salida`);
+    if (s.start === s.end) {
+      errors.push(`En ${s.day}, la hora de entrada y la de salida no pueden ser iguales`);
       continue;
     }
     seenDays.add(s.day);
