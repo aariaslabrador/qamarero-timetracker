@@ -95,8 +95,9 @@ function renderLogs(logs) {
       <td>${date}</td>
       <td>${escapeHtml(log.employeeName)}</td>
       <td>${log.action === 'entrada' ? 'Entrada' : 'Salida'}</td>
-      <td><span class="badge ${log.status}">${log.status === 'ok' ? 'OK' : 'Error'}</span>
+      <td><span class="badge ${log.status}">${log.note ? 'Ya fichado' : log.status === 'ok' ? 'OK' : 'Error'}</span>
         ${log.status === 'error' ? `<div style="font-size:12px;color:#c0392b;margin-top:4px">${escapeHtml(log.error || '')}</div>` : ''}
+        ${log.note ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">${escapeHtml(log.note)}, no se ha hecho nada</div>` : ''}
         ${log.screenshot ? `<a href="/api/logs/${log.id}/screenshot" target="_blank" rel="noopener" style="font-size:12px">Ver captura</a>` : ''}
       </td>
     `;

@@ -75,7 +75,9 @@ async function fichar(page, { name, pin, action, restaurantName, displayName }) 
 
   if (action === 'entrada') {
     if (state === 'on') {
-      throw new Error(`${name} ya está en turno; no hace falta fichar entrada de nuevo.`);
+      // Ya estaba fichado (a mano, o por un intento automático anterior):
+      // no es un fallo, así que no hay nada que hacer ni que avisar.
+      return { skipped: true, reason: `${name} ya estaba en turno` };
     }
     // Empleado "Fuera de turno": aparece el teclado "Fichar entrada" pidiendo
     // su PIN (se envía solo al 4º dígito).
@@ -95,6 +97,8 @@ async function fichar(page, { name, pin, action, restaurantName, displayName }) 
   } else {
     throw new Error(`Acción desconocida: ${action}`);
   }
+
+  return { skipped: false };
 }
 
 module.exports = { openPersonal, selectEmployee, fichar };

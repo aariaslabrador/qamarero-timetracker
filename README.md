@@ -93,7 +93,10 @@ y desde el panel:
 - **Fichar entrada / Fichar salida**: dispara el fichaje al momento, útil
   para probar que todo funciona antes de dejarlo en automático.
 - **Historial de fichajes**: muestra cada intento (automático o manual), si
-  fue bien y, si falló, el motivo.
+  fue bien y, si falló, el motivo. Si se intenta fichar entrada de alguien
+  que ya estaba en turno (por ejemplo, si ya lo fichaste tú a mano antes),
+  se marca como "Ya fichado" — no es un error, simplemente no hace falta
+  hacer nada.
 - Marca un empleado como "Pausado" (checkbox "activo" al editar) para que
   el planificador deje de ficharlo sin necesidad de borrarlo.
 

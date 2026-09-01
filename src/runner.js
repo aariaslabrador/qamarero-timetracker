@@ -32,7 +32,7 @@ async function runFichar({ employee, action }) {
     browser = await chromium.launch({ headless });
     const page = await browser.newPage();
     await login(page, venue.accessPhone, venue.accessPin);
-    await fichar(page, {
+    const result = await fichar(page, {
       name: employee.name,
       pin: employee.pin,
       action,
@@ -45,10 +45,11 @@ async function runFichar({ employee, action }) {
       employeeName: employee.name,
       action,
       status: 'ok',
+      note: result.skipped ? result.reason : undefined,
       startedAt,
       finishedAt: new Date().toISOString(),
     });
-    return { ok: true };
+    return { ok: true, skipped: result.skipped };
   } catch (err) {
     let screenshot = null;
     try {
