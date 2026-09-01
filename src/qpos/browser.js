@@ -35,10 +35,10 @@ async function login(page, phone, pin) {
   // aparte, al intentar abrir Personal).
   try {
     await page.getByText('Mesas', { exact: true }).waitFor({ timeout: 15000 });
-  } catch {
+  } catch (err) {
     throw new Error(
       'El login no llegó a completarse (no apareció la pantalla principal tras introducir el PIN). ' +
-        'Revisa que el teléfono y el PIN de acceso de este local sean correctos.'
+        `Revisa que el teléfono y el PIN de acceso de este local sean correctos. Error técnico: ${err.message}`
     );
   }
 }
