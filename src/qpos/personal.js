@@ -2,9 +2,19 @@ const { typeDigits } = require('./browser');
 
 // El logo/avatar del local (arriba a la izquierda) es el acceso directo a
 // la pantalla de Personal desde cualquier pantalla en la que aterrice el
-// login (dashboard general o "Cuenta rápida").
+// login (dashboard general o "Cuenta rápida"). Se identifica por su nombre
+// accesible, que tiene que coincidir exactamente con lo que Q-POS muestra
+// para ese local (campo "restaurantName" del local en el panel).
 async function openPersonal(page, restaurantName) {
-  await page.getByRole('button', { name: restaurantName }).click();
+  try {
+    await page.getByRole('button', { name: restaurantName, exact: true }).click({ timeout: 15000 });
+  } catch {
+    throw new Error(
+      `No se encontró el botón del local "${restaurantName}" tras el login (el login sí funcionó). ` +
+        'Comprueba en "Gestionar locales" que el campo "Nombre tal cual aparece en Q-POS al entrar" ' +
+        'coincide exactamente (mayúsculas incluidas) con lo que ves en el logo de arriba a la izquierda al entrar a mano.'
+    );
+  }
   await page.getByPlaceholder('Buscar personal').waitFor({ timeout: 15000 });
 }
 

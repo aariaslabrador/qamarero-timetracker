@@ -17,7 +17,7 @@ async function typeDigits(page, value) {
   }
 }
 
-async function login(page, phone, pin, restaurantName) {
+async function login(page, phone, pin) {
   await page.goto(BASE_URL);
 
   await page.getByText('Introduce tu teléfono').waitFor();
@@ -28,10 +28,19 @@ async function login(page, phone, pin, restaurantName) {
   await typeDigits(page, pin);
 
   // Tras el login la app puede aterrizar en distintas pantallas (el
-  // dashboard general o directamente en "Cuenta rápida"), pero el logo del
-  // local arriba a la izquierda está siempre presente: es la señal fiable
-  // de que el login terminó bien.
-  await page.getByRole('button', { name: restaurantName }).waitFor({ timeout: 15000 });
+  // dashboard general o directamente en "Cuenta rápida"), pero el enlace
+  // "Mesas" de la barra superior está siempre presente en ambas: es la
+  // señal fiable de que el login terminó bien, sin depender de si el
+  // nombre del local está configurado correctamente (eso se comprueba
+  // aparte, al intentar abrir Personal).
+  try {
+    await page.getByText('Mesas', { exact: true }).waitFor({ timeout: 15000 });
+  } catch {
+    throw new Error(
+      'El login no llegó a completarse (no apareció la pantalla principal tras introducir el PIN). ' +
+        'Revisa que el teléfono y el PIN de acceso de este local sean correctos.'
+    );
+  }
 }
 
 module.exports = { BASE_URL, clickDigit, typeDigits, login };

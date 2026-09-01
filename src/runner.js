@@ -31,7 +31,7 @@ async function runFichar({ employee, action }) {
     const restaurantName = venue.restaurantName || venue.name;
     browser = await chromium.launch({ headless });
     const page = await browser.newPage();
-    await login(page, venue.accessPhone, venue.accessPin, restaurantName);
+    await login(page, venue.accessPhone, venue.accessPin);
     await fichar(page, {
       name: employee.name,
       pin: employee.pin,
